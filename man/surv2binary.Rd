@@ -3,14 +3,20 @@
 \title{Convert a "Surv" object into binary variables at different time points}
 \description{Function to convert a \code{"Surv"} object (e.g., the predictions obtained from \code{\link{glmnet_predict}} using a \code{"cox"} model) into a list of binary variables (e.g., as obtained from \code{\link{glmnet_predict}} using a \code{"binomial"} model) at different time points.}
 \usage{
-surv2binary(x)
+surv2binary(x, subset_id = NULL)
 }
 \arguments{
   \item{x}{a \code{"Surv"} object.}
+  \item{subset_id}{vector or factor identifying the subsets for which the conversion will be performed separately.}
 }
 \details{This function is useful, for instance, to estimate the AUC at different timepoints from \code{"cox"} predictions.}
 \value{A list of times and binary variables.}
 \author{Joaquim Radua}
+\references{
+  Salazar de Pablo, G., Radua, J., Frearson, G., Young, A.H., Arango, C., Kelleher, I., Sharma, A., Uhlhaas, P.J., Solmi, M., Fusar-Poli, P., Guinart, D., Correll, C.U. (2025)
+  Development and validation of a prognostic model and risk calculator for the estimation of bipolar-spectrum disorder risk in hospitalised adolescents with non-psychotic/non-bipolar mental disorders.
+  \emph{Molecular Psychiatry}, in Press, doi:10.1038/s41380-025-03244-1.
+}
 \seealso{
   \code{\link{glmnet_predict}} for obtaining \code{"cox"} predictions.
   \code{\link{cv}} for conducting a cross-validation.

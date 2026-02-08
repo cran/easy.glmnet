@@ -1,4 +1,7 @@
-export(assign.folds, cv, data.frame2glmnet.matrix, data.frame2glmnet.matrix_fit, glmnet_fit, glmnet_get.items.relevance, glmnet_get.main.model, glmnet_predict, impute.glmnet.matrix, impute.glmnet.matrix_fit, surv2binary)
+export(assign.folds, coef.glmnet_fit, cv, data.frame2glmnet.matrix,
+       data.frame2glmnet.matrix_fit, glmnet_fit, glmnet_get.items.relevance,
+       glmnet_get.main.model, glmnet_predict, impute.glmnet.matrix,
+       impute.glmnet.matrix_fit, predict.glmnet_fit, surv2binary)
 
 importFrom("doParallel", "registerDoParallel")
 importFrom("foreach", "%dopar%", "foreach")

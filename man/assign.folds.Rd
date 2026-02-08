@@ -6,7 +6,7 @@
 \arguments{
   \item{y}{response to be predicted. A binary vector for \code{"binomial"}, an object of class \code{"Surv"} for \code{"cox"}, or a numeric vector for \code{"gaussian"}.}
   \item{family}{distribution of y: \code{"binomial"}, \code{"cox"}, or \code{"gaussian"}.}
-  \item{site}{vector with the sites' names, or NULL for studies conducted in a single site.}
+  \item{site}{vector or factor with the sites' names, or NULL for studies conducted in a single site.}
   \item{nfolds}{number of folds.}
 }
 \details{If \code{family} is \code{"binomial"}, the function randomly assigns the folds separately for the two outcomes. If \code{family} is \code{"gaussian"}, the function randomly assigns the folds separately for ranges of the outcome. If \code{family} is \code{"gaussian"}, the function randomly assigns the folds separately for ranges of time and censorship. If \code{site} is not null, the function randomly assigns the folds separately for each site.}

@@ -1,11 +1,13 @@
 \name{glmnet_fit}
 \alias{glmnet_fit}
 \alias{glmnet_predict}
+\alias{coef.glmnet_fit}
+\alias{predict.glmnet_fit}
 \title{Obtain and use a glmnet prediction model}
 \description{Function to easily fit and apply glmnet models (including best lambda estimation, etc).}
 \usage{
 glmnet_fit(x, y, family = c("binomial", "cox", "gaussian"),
-           nfolds = 10, standardize = TRUE, min.beta = 1e-12)
+           nfolds = 10, min.beta = 1e-12, ...)
 glmnet_predict(m, x)
 }
 %- maybe also 'usage' for other objects documented here.
@@ -15,8 +17,8 @@ glmnet_predict(m, x)
   \item{family}{distribution of y: "binomial", "cox", or "gaussian".}
   \item{m}{lasso model to conduct the prediction, obtained with \code{\link{glmnet_fit}}.}
   \item{nfolds}{number of folds.}
-  \item{standardize}{logical flag for x variable standardization. The coefficients are always returned on the original scale.}
   \item{min.beta}{minimum value of betas.}
+  \item{...}{further arguments passed to the function \code{\link[glmnet]{glmnet}}, such as \code{standardize} (a logical flag for x variable standardization, though the coefficients are always returned on the original scale).}
 }
 \details{The function \code{glmnet_fit} mainly calls the function \code{\link[glmnet]{glmnet}} to fit a generalized linear model with lasso regularization, though with some extra code to make the call easier: it allow \code{x} to have a single column, it conducts an internal cross-validation using the function \code{\link[glmnet]{cv.glmnet}} to select the regularization parameter \code{lambda} automatically, and it removes the negligible coefficients.}
 \value{An object of class \code{"glmnet_fit"}, which is briefly a list with the intercept (\code{"a0"}) and regressors (\code{"beta"}) of the model; it also includes the indices of the regressors (\code{"i"}) and the \code{"family"} of the response.}

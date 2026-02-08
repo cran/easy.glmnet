@@ -24,6 +24,10 @@ impute.glmnet.matrix(m, x, nimp = 20, verbose = TRUE)
   Palau, P., Solanes, A., Madre, M., Saez-Francas, N., Sarro, S., Moro, N., Verdolini, N., Sanchez, M., Alonso-Lana, S., Amann, B.L., Romaguera, A., Martin-Subero, M., Fortea, L., Fuentes-Claramonte, P., Garcia-Leon, M.A., Munuera, J., Canales-Rodriguez, E.J., Fernandez-Corcuera, P., Brambilla, P., Vieta, E., Pomarol-Clotet, E., Radua, J. (2023)
   Improved estimation of the risk of manic relapse by combining clinical and brain scan data.
   \emph{Spanish Journal of Psychiatry and Mental Health}, \bold{16}, 235--243, doi:10.1016/j.rpsm.2023.01.001.
+
+  Salazar de Pablo, G., Radua, J., Frearson, G., Young, A.H., Arango, C., Kelleher, I., Sharma, A., Uhlhaas, P.J., Solmi, M., Fusar-Poli, P., Guinart, D., Correll, C.U. (2025)
+  Development and validation of a prognostic model and risk calculator for the estimation of bipolar-spectrum disorder risk in hospitalised adolescents with non-psychotic/non-bipolar mental disorders.
+  \emph{Molecular Psychiatry}, in Press, doi:10.1038/s41380-025-03244-1.
 }
 \author{Joaquim Radua and Aleix Solanes}
 \seealso{
@@ -56,7 +60,7 @@ x_imputed = impute.glmnet.matrix(m_impute, x)
   # Predict y via cross-validation, including imputations
   fit_fun = function (x_training, y_training) {
     m = list(
-      impute = impute.glmnet.matrix_fit(x_training, ncores = pmax(1, parallel::detectCores() - 2)),
+      impute = impute.glmnet.matrix_fit(x_training, ncores = 1),
       lasso = list()
     )
     x_imputed = impute.glmnet.matrix(m$impute, x_training)

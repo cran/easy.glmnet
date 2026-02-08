@@ -1,0 +1,15 @@
+easy.glmnet v1.1 (Release date: 2026-02-07)
+========================================
+
+Changes:
+
+* Minor improvements: added "..." argument to "glmnet_fit"" and "predict" alias for "glmnet_predict".
+* Solved minor bugs in checking arguments.
+* Removed detectCores() from a manual's example
+
+
+easy.glmnet v1.0 (Release date: 2024-09-06)
+========================================
+
+First version.
+

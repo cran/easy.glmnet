@@ -5,13 +5,13 @@
 \usage{cv(x, y, family = c("binomial", "cox", "gaussian"), fit_fun, predict_fun, site = NULL,
 covar = NULL, nfolds = 10, pred.format = NA, verbose = TRUE, ...)}
 \arguments{
-  \item{x}{input matrix for glmnet of dimension nobs x nvars; each row is an observation vector. It can be easily obtained with \code{\link{data.frame2glmnet.matrix}}.}
+  \item{x}{predictors. A matrix or data.frame (rows are observations and columns are variables) or a vector of factor (if only one predictor).}
   \item{y}{response to be predicted. A binary vector for "binomial", a "Surv" object for "cox", or a numeric vector for "gaussian".}
   \item{family}{distribution of y: "binomial", "cox", or "gaussian".}
   \item{fit_fun}{function to create the prediction model using the training subsets. It can have between two and four arguments(the first two are compulsory): \code{x_training} (training X data.frame), \code{y_training} (training Y outcomes), \code{site_training} (training site names), and \code{covar_training} (training covariates). It must return the overall prediction model, which may be a list of the different submodels used in different steps and/or derived from different imputations.}
   \item{predict_fun}{function to apply the prediction model to the test sets. It can have between two and four arguments (the first two are compulsory): \code{model} (the overall prediction model), \code{x_test} (test X data.frame), \code{site_test} (test site names), and \code{covar_test} (test covariates). It must return the predictions.}
-  \item{site}{vector with the sites' names, or NULL for studies conducted in a single site.}
-  \item{covar}{other covariates that can be passed to fit_fun and predict_fun.}
+  \item{site}{vector or factor with the sites' names, or NULL for studies conducted in a single site.}
+  \item{covar}{other covariates that can be passed to fit_fun and predict_fun. A matrix or data.frame (rows are observations and columns are variables) or a vector of factor (if only one covariate).}
   \item{\dots}{other arguments that can be passed to fit_fun and predict_fun.}
   \item{nfolds}{number of folds, only used if \code{folds} is NULL.}
   \item{pred.format}{format of the predictions returned by each fold. E.g., if the prediction is an array, use NA.}

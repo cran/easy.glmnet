@@ -101,8 +101,13 @@ function (x)
 .is_family <-
 function (family) 
 {
-    (is.vector(family) || is.factor(family)) && length(family) == 
-        1 && family %in% c("binomial", "cox", "gaussian")
+    .is_vector_or_factor(family) && length(family) == 1 && family %in% 
+        c("binomial", "cox", "gaussian")
+}
+.is_matrix_or_data.frame <-
+function (x) 
+{
+    is.matrix(x) || is.data.frame(x)
 }
 .is_number <-
 function (x) 
@@ -118,6 +123,11 @@ function (x)
 function (x) 
 {
     inherits(x, "Surv")
+}
+.is_vector_or_factor <-
+function (x) 
+{
+    is.vector(x) || is.factor(x)
 }
 assign.folds <-
 function (y, family = c("binomial", "cox", "gaussian"), site = NULL, 
@@ -141,9 +151,9 @@ function (y, family = c("binomial", "cox", "gaussian"), site = NULL,
     else {
         n = length(y)
     }
-    if (!(is.null(site) || ((is.vector(site) || is.factor(site)) && 
-        length(site) == n))) {
-        stop("site must be a vector with the same length as y, or NULL")
+    if (!(is.null(site) || (.is_vector_or_factor(site) && length(site) == 
+        n))) {
+        stop("site must be a vector or factor with the same length as y, or NULL")
     }
     if (!(.is_number(nfolds) && nfolds > 0)) {
         stop("nfolds must be a positive number")
@@ -159,9 +169,9 @@ function (y, family = c("binomial", "cox", "gaussian"), site = NULL,
     folds
 }
 coef.glmnet_fit <-
-function (x) 
+function (m) 
 {
-    c(`(Intercept)` = x$a0, x$beta)
+    c(`(Intercept)` = m$a0, m$beta)
 }
 cv <-
 function (x, y, family = c("binomial", "cox", "gaussian"), fit_fun, 
@@ -186,19 +196,21 @@ function (x, y, family = c("binomial", "cox", "gaussian"), fit_fun,
     else {
         n = length(y)
     }
-    if (!((is.matrix(x) || is.data.frame(x)) && nrow(x) == n)) {
-        stop("x must be a matrix or data.frame with the same height as y")
+    if (!((.is_matrix_or_data.frame(x) && nrow(x) == n) || (.is_vector_or_factor(x) && 
+        length(x) == n))) {
+        stop("x must be a matrix, data.frame, vector, or factor with the same height or length as y")
     }
     if (!is.function(fit_fun) || !is.function(predict_fun)) {
         stop("fit_fun and predict_fun must be functions")
     }
-    if (!(is.null(site) || ((is.vector(site) || is.factor(site)) && 
-        length(site) == n))) {
+    if (!(is.null(site) || (.is_vector_or_factor(site) && length(site) == 
+        n))) {
         stop("site must be a vector with the same length as y, or NULL")
     }
-    if (!(is.null(site) || ((is.matrix(covar) && is.matrix(covar)) && 
-        nrow(covar) == n))) {
-        stop("covar must be a matrix or data.frame with the same height as y")
+    if (!(is.null(covar) || (.is_matrix_or_data.frame(covar) && 
+        nrow(covar) == n) || (.is_vector_or_factor(covar) && 
+        length(covar) == n))) {
+        stop("covar must be a matrix, data.frame, vector, or factor with the same height as y, or NULL")
     }
     if (!(.is_number(nfolds) && nfolds > 0)) {
         stop("nfolds must be a positive number")
@@ -257,48 +269,87 @@ function (x, y, family = c("binomial", "cox", "gaussian"), fit_fun,
     rownames(y.pred) = NULL
     for (fold in 1:nfolds) {
         if (verbose) {
-            cat("[cv] Fold", fold, " - Training\n")
+            cat("[cv] Fold", fold, "- Training\n")
         }
         training = which(folds != fold)
-        x_training = x[training, ]
-        x_training_constant = which(apply(x_training, 2, function(x) {
-            length(unique(x)) == 1
-        }))
-        if (length(x_training_constant) > 0) {
-            x_training = x_training[, -x_training_constant]
-        }
-        y_training = switch(family, cox = y[training, ], y[training])
-        model = switch(type, simple = fit_fun(x_training, y_training, 
-            ...), site = fit_fun(x_training, y_training, site[training], 
-            NULL, ...), covar = fit_fun(x_training, y_training, 
-            NULL, covar[training, ], ...), `site+covar` = fit_fun(x_training, 
-            y_training, site[training], covar[training, ], ...))
-        models[[fold]] = model
-        if (verbose) {
-            cat("[cv] Fold", fold, " - Test\n")
-        }
-        test = which(folds == fold)
-        x_test = x[test, ]
-        if (length(x_training_constant) > 0) {
-            if (is.vector(x_test)) {
-                x_test = matrix(x_test[-x_training_constant], 
-                  nrow = 1, dimnames = list(NULL, dimnames(x)[[2]][-x_training_constant]))
+        if (.is_matrix_or_data.frame(x)) {
+            x_training = x[training, ]
+            x_training_constant = which(apply(x_training, 2, 
+                function(x) {
+                  length(unique(x)) < 2
+                }))
+            if (length(x_training_constant) > 0) {
+                x_training = x_training[, -x_training_constant]
+                if (!.is_matrix_or_data.frame(x_training)) {
+                  if (is.data.frame(x)) {
+                    x_training = as.data.frame(x_training)
+                  }
+                  else {
+                    x_training = as.matrix(x_training)
+                  }
+                  colnames(x_training) = colnames(x)[-x_training_constant]
+                }
             }
-            else {
-                x_test = x_test[, -x_training_constant]
+            if (ncol(x_training) == 0) {
+                stop("Training data is not variable")
             }
         }
         else {
-            if (is.vector(x_test)) {
-                x_test = matrix(x_test, nrow = 1, dimnames = list(NULL, 
-                  dimnames(x)[[2]]))
+            x_training = x[training]
+            if (length(unique(x_training)) < 2) {
+                stop("Training data is not variable")
+            }
+        }
+        y_training = switch(family, cox = y[training, ], y[training])
+        if (type %in% c("covar", "site+covar")) {
+            if (.is_matrix_or_data.frame(covar)) {
+                covar_training = covar[training, ]
+            }
+            else {
+                covar_training = covar[training]
+            }
+        }
+        model = switch(type, simple = fit_fun(x_training, y_training, 
+            ...), site = fit_fun(x_training, y_training, site[training], 
+            NULL, ...), covar = fit_fun(x_training, y_training, 
+            NULL, covar_training, ...), `site+covar` = fit_fun(x_training, 
+            y_training, site[training], covar_training, ...))
+        models[[fold]] = model
+        if (verbose) {
+            cat("[cv] Fold", fold, "- Test\n")
+        }
+        test = which(folds == fold)
+        if (.is_matrix_or_data.frame(x)) {
+            x_test = x[test, ]
+            if (length(x_training_constant) > 0) {
+                x_test = x_test[, -x_training_constant]
+                if (!.is_matrix_or_data.frame(x_test)) {
+                  if (is.data.frame(x)) {
+                    x_test = as.data.frame(x_test)
+                  }
+                  else {
+                    x_test = as.matrix(x_test)
+                  }
+                  colnames(x_test) = colnames(x)[-x_training_constant]
+                }
+            }
+        }
+        else {
+            x_test = x[test]
+        }
+        if (type %in% c("covar", "site+covar")) {
+            if (.is_matrix_or_data.frame(covar)) {
+                covar_test = covar[test, ]
+            }
+            else {
+                covar_test = covar[test]
             }
         }
         y.pred[test, ] = switch(type, simple = predict_fun(model, 
             x_test, ...), site = predict_fun(model, x_test, site[test], 
             NULL, ...), covar = predict_fun(model, x_test, NULL, 
-            covar[test, ], ...), `site+covar` = predict_fun(model, 
-            x_test, site[test], covar[test, ], ...), )
+            covar_test, ...), `site+covar` = predict_fun(model, 
+            x_test, site[test], covar_test, ...), )
     }
     list(predictions = cbind(data.frame(fold = folds), y, y.pred), 
         models = models)
@@ -370,7 +421,7 @@ function (x)
 }
 glmnet_fit <-
 function (x, y, family = c("binomial", "cox", "gaussian"), nfolds = 10, 
-    standardize = TRUE, min.beta = 9.9999999999999998e-13) 
+    min.beta = 9.9999999999999998e-13, ...) 
 {
     if (!.is_family(family)) {
         stop("family must be \"binomial\", \"cox\", or \"gaussian\"")
@@ -395,9 +446,6 @@ function (x, y, family = c("binomial", "cox", "gaussian"), nfolds = 10,
     }
     if (!(.is_number(nfolds) && nfolds > 0)) {
         stop("nfolds must be a positive number")
-    }
-    if (!.is_boolean(standardize)) {
-        stop("standardize must be TRUE or FALSE")
     }
     if (!(.is_number(min.beta) && min.beta > 0)) {
         stop("min.beta must be a positive number")
@@ -428,13 +476,13 @@ function (x, y, family = c("binomial", "cox", "gaussian"), nfolds = 10,
             stop("too few subjects of one group")
         }
         cv_ = cv.glmnet(x, y, type.measure = type_measure, family = family, 
-            foldid = folds, standardize = standardize)
+            foldid = folds, ...)
         idx_lambda = match(cv_$lambda.min, cv_$lambda)
         if (cv_$glmnet.fit$df[idx_lambda] == 0) {
             idx_lambda = which(cv_$glmnet.fit$df > 0)[1]
         }
         glmnet.control(fdev = 0)
-        lasso = glmnet(x, y, family, lambda = cv_$lambda, standardize = standardize)
+        lasso = glmnet(x, y, family, lambda = cv_$lambda, ...)
         a0 = lasso$a0[idx_lambda]
         betas = lasso$beta[, idx_lambda]
         betas[which(abs(betas) < min.beta)] = 0
@@ -692,62 +740,61 @@ function (x, ncores = 1, verbose = TRUE)
     m = list()
     j = NULL
     m = foreach(j = 1:ncol(x), .export = c(".assign.folds_one_site", 
-        ".assign.folds_simple", ".is_boolean", ".is_family", 
-        ".is_number", ".is_numeric_vector", "assign.folds", "cv.glmnet", 
-        "glmnet", "glmnet.control", "glmnet_fit", "glmnet_predict")) %dopar% 
-        {
-            X_na_j = X_na[, j]
-            x.x = matrix(x[which(!X_na_j), -j], ncol = ncol(x) - 
-                1)
-            x.y = x[which(!X_na_j), j]
-            family = ifelse(setequal(x.y, c(0, 1)), "binomial", 
-                "gaussian")
-            completeCols = apply(x.x, 1, function(tmp) {
-                complete = which(!is.na(tmp))
-                ifelse(length(complete) > 0, paste(complete, 
-                  collapse = ","), NA)
-            })
-            completeCols = setdiff(unique(completeCols), NA)
-            imp.models = list()
-            errors = c()
-            for (k in seq_len(length(completeCols))) {
-                name = paste("col", j, "-set", k, sep = "")
-                cols.complete = as.numeric(strsplit(completeCols[k], 
-                  ",", fixed = TRUE)[[1]])
-                rows.complete = which(apply(x.x, 1, function(tmp) {
-                  all(cols.complete %in% which(!is.na(tmp)))
-                }))
-                x.x.complete = matrix(x.x[rows.complete, cols.complete], 
-                  ncol = length(cols.complete))
-                x.y.complete = x.y[rows.complete]
-                if (length(unique(x.y.complete)) > 1 && ((family == 
-                  "binomial" && length(table(x.y.complete, exclude = NULL)) == 
-                  2 && min(table(x.y.complete, exclude = NULL)) > 
-                  2) || (family == "gaussian" && (length(table(x.y.complete, 
-                  exclude = NULL)) > 2 || (length(table(x.y.complete, 
-                  exclude = NULL)) == 2 && min(table(x.y.complete, 
-                  exclude = NULL)) > 2))))) {
-                  imp.model = suppressWarnings(glmnet_fit(x.x.complete, 
-                    x.y.complete, family))
-                  imp.model$name = name
-                  x.y.complete.pred = glmnet_predict(imp.model, 
-                    x.x.complete)
-                  imp.model$i = cols.complete[imp.model$i]
-                  error = ifelse(family == "binomial", mean(((x.y.complete.pred > 
-                    0.5) != x.y.complete)), sqrt(mean((x.y.complete.pred - 
-                    x.y.complete)^2)))
-                  names(error) = name
-                }
-                else {
-                  imp.model = NULL
-                  error = Inf
-                }
-                imp.models[[k]] = imp.model
-                errors = c(errors, error)
+        ".assign.folds_simple", ".is_binary_vector", ".is_boolean", 
+        ".is_family", ".is_number", ".is_numeric_vector", "assign.folds", 
+        "cv.glmnet", "glmnet", "glmnet.control", "glmnet_fit", 
+        "glmnet_predict")) %dopar% {
+        X_na_j = X_na[, j]
+        x.x = matrix(x[which(!X_na_j), -j], ncol = ncol(x) - 
+            1)
+        x.y = x[which(!X_na_j), j]
+        family = ifelse(setequal(x.y, c(0, 1)), "binomial", "gaussian")
+        completeCols = apply(x.x, 1, function(tmp) {
+            complete = which(!is.na(tmp))
+            ifelse(length(complete) > 0, paste(complete, collapse = ","), 
+                NA)
+        })
+        completeCols = setdiff(unique(completeCols), NA)
+        imp.models = list()
+        errors = c()
+        for (k in seq_len(length(completeCols))) {
+            name = paste("col", j, "-set", k, sep = "")
+            cols.complete = as.numeric(strsplit(completeCols[k], 
+                ",", fixed = TRUE)[[1]])
+            rows.complete = which(apply(x.x, 1, function(tmp) {
+                all(cols.complete %in% which(!is.na(tmp)))
+            }))
+            x.x.complete = matrix(x.x[rows.complete, cols.complete], 
+                ncol = length(cols.complete))
+            x.y.complete = x.y[rows.complete]
+            if (length(unique(x.y.complete)) > 1 && ((family == 
+                "binomial" && length(table(x.y.complete, exclude = NULL)) == 
+                2 && min(table(x.y.complete, exclude = NULL)) > 
+                2) || (family == "gaussian" && (length(table(x.y.complete, 
+                exclude = NULL)) > 2 || (length(table(x.y.complete, 
+                exclude = NULL)) == 2 && min(table(x.y.complete, 
+                exclude = NULL)) > 2))))) {
+                imp.model = suppressWarnings(glmnet_fit(x.x.complete, 
+                  x.y.complete, family))
+                imp.model$name = name
+                x.y.complete.pred = glmnet_predict(imp.model, 
+                  x.x.complete)
+                imp.model$i = cols.complete[imp.model$i]
+                error = ifelse(family == "binomial", mean(((x.y.complete.pred > 
+                  0.5) != x.y.complete)), sqrt(mean((x.y.complete.pred - 
+                  x.y.complete)^2)))
+                names(error) = name
             }
-            list(family = family, data = x.y, imp.models = imp.models[order(errors)], 
-                errors = errors[order(errors)])
+            else {
+                imp.model = NULL
+                error = Inf
+            }
+            imp.models[[k]] = imp.model
+            errors = c(errors, error)
         }
+        list(family = family, data = x.y, imp.models = imp.models[order(errors)], 
+            errors = errors[order(errors)])
+    }
     stopCluster(cl)
     if (verbose) {
         cat("[impute.glmnet.matrix_fit] Running time:", difftime(Sys.time(), 
@@ -756,19 +803,62 @@ function (x, ncores = 1, verbose = TRUE)
     class(m) = "impute.glmnet.matrix_fit"
     m
 }
+predict.glmnet_fit <-
+function (m, x) 
+{
+    if (!inherits(m, "glmnet_fit")) {
+        stop("m must be a \"glmnet_fit\" object")
+    }
+    if (!is.matrix(x)) {
+        stop("x must be a matrix")
+    }
+    y = matrix(x[, m$i], ncol = length(m$i)) %*% m$beta
+    if (m$family != "cox") {
+        y = m$a0 + y
+    }
+    if (m$family == "binomial") {
+        y = 1/(1 + exp(-y))
+    }
+    y
+}
 surv2binary <-
-function (x) 
+function (x, subset_id = NULL) 
 {
     if (!inherits(x, "Surv")) {
         stop("x must be a \"Surv\" object")
     }
-    times = sort(unique(x[, 1]))
+    if (!(is.null(subset_id) || (.is_vector_or_factor(subset_id) && 
+        length(subset_id) == length(x)))) {
+        stop("subset_id must be a vector or factor with the same length as x, or NULL")
+    }
     y = list()
+    times = sort(unique(x[, 1]))
+    if (!is.null(subset_id)) {
+        subset_ids = unique(subset_id)
+    }
     for (i in 1:length(times)) {
-        x_i = x
-        x_i[which(x_i[, 1] < times[i] & x_i[, 2] == 0), 2] = NA
-        x_i[which(x_i[, 1] > times[i]), 2] = 0
-        y[[i]] = list(time = times[i], status = x_i[, 2])
+        if (!is.null(subset_id)) {
+            for (j in 1:length(subset_ids)) {
+                x_i = x[which(subset_id == subset_ids[j])]
+                x_i[which(x_i[, 1] < times[i] & x_i[, 2] == 0), 
+                  2] = NA
+                x_i[which(x_i[, 1] > times[i]), 2] = 0
+                if (j == 1) {
+                  y[[i]] = list(time = times[i], subsets = list(list(subset_id = subset_ids[1], 
+                    status = x_i[, 2])))
+                }
+                else {
+                  y[[i]]$subsets[[j]] = list(subset_id = subset_ids[j], 
+                    status = x_i[, 2])
+                }
+            }
+        }
+        else {
+            x_i = x
+            x_i[which(x_i[, 1] < times[i] & x_i[, 2] == 0), 2] = NA
+            x_i[which(x_i[, 1] > times[i]), 2] = 0
+            y[[i]] = list(time = times[i], status = x_i[, 2])
+        }
     }
     y
 }
