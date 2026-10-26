@@ -1,0 +1,313 @@
+---
+title: "Evaluating and interpreting your model"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Evaluating and interpreting your model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+In the first tutorial ([Get started](easy.glmnet.html)), you learned to build a
+prediction model and to estimate its accuracy correctly with cross-validation.
+In this tutorial, you will learn to:
+
+1. Measure how well the model **discriminates** the patients who will relapse
+   from those who will not, with the area under the ROC curve.
+2. Measure whether the probabilities that the model estimates are correct,
+   i.e., whether the model is well **calibrated**.
+3. Find which variables are the most **relevant** for the predictions.
+4. Obtain the model that you would use with future patients, and use it to
+   estimate the probability of relapse of a **new patient**.
+
+This tutorial takes about 20–30 minutes and, as in the first tutorial, all the
+code runs in a few seconds.
+
+
+## The data and the cross-validation
+
+We use the same data as in the first tutorial, i.e., 100 patients to build and
+cross-validate the model, and 900 new patients that we will use as a "crystal
+ball". To keep things simple, we only use the 40 numeric variables:
+
+```{r}
+library(easy.glmnet)
+x = as.matrix(patients[, 1:40])
+y = patients$relapse
+x_new = as.matrix(new_patients[, 1:40])
+y_new = new_patients$relapse
+```
+
+We cross-validate a lasso model as in the first tutorial, with one important
+difference: we will now use the **probabilities** of relapse, without rounding
+them to 0 or 1.
+
+```{r}
+set.seed(1)
+fit_fun = function (x_training, y_training) {
+  glmnet_fit(x_training, y_training, family = "binomial")
+}
+predict_fun = function (m, x_test) {
+  predict(m, x_test)
+}
+res = cv(x, y, family = "binomial", fit_fun, predict_fun, verbose = FALSE)
+```
+
+(If you see a warning about `type.measure`, you can ignore it, as explained in
+the first tutorial.)
+
+Typing the name of the result of cv shows a summary of the accuracy and the
+calibration of the cross-validated predictions:
+
+```{r}
+res
+```
+
+Let's see what these numbers mean.
+
+
+## Step 1: Discrimination
+
+### Probabilities and thresholds
+
+In the first tutorial, we converted the probabilities into predictions of 0 or
+1 with `round`, i.e., we predicted a relapse if the probability was higher
+than 0.5. With these predictions, we could estimate the balanced accuracy:
+
+```{r}
+y.pred = round(res$predictions$y.pred)
+simple.accuracy(res$predictions$y, y.pred, "bac")
+```
+
+However, 0.5 is an arbitrary **threshold**. For instance, if relapses are very
+harmful and the preventive treatment is cheap and safe, a clinician might
+prefer to treat all patients with a probability of relapse higher than 0.2.
+With another threshold, the sensitivity and the specificity would be different,
+and so would the balanced accuracy.
+
+### The area under the ROC curve
+
+The **area under the ROC curve** (AUC) measures how well the model
+discriminates, without choosing any threshold. It is the probability that, if
+we take at random a patient who relapsed and a patient who did not, the model
+estimates a higher probability of relapse for the first one. Thus, an AUC of
+0.5 means that the model discriminates no better than tossing a coin, and an
+AUC of 1 means that it discriminates perfectly.
+
+The AUC was the first number shown by `res`, followed by the lower (`auc.lwr`)
+and upper (`auc.upr`) limits of its 95% confidence interval. You can also
+obtain them with `simple.accuracy`:
+
+```{r}
+simple.accuracy(res$predictions$y, res$predictions$y.pred, "auc")
+```
+
+
+## Step 2: Calibration
+
+### Are the probabilities correct?
+
+A model may discriminate well but estimate wrong probabilities. For instance,
+it could correctly estimate that one patient has a higher risk than another,
+but estimate probabilities of 60% and 40% when the actual probabilities are 30%
+and 20%. If a clinician started a preventive treatment in all patients with a
+probability higher than 50%, they would unnecessarily treat the first patient. The agreement between the estimated probabilities and what
+actually happens is called **calibration**.
+
+### Calibration-in-the-large and calibration slope
+
+`simple.calibration` summarizes the calibration with two numbers, each with its
+95% confidence interval:
+
+```{r}
+simple.calibration(res$predictions$y, res$predictions$y.pred, "binomial")
+```
+
+- The **calibration-in-the-large** (`calibr.large` in the output) tells whether the estimated probabilities
+  are, on average, too high (negative values) or too low (positive values). Its
+  ideal value is 0.
+- The **calibration slope** (`calibr.slope` in the output) tells whether the estimated probabilities are too
+  extreme (values lower than 1, e.g., probabilities too close to 0 or 1) or too
+  modest (values higher than 1, e.g., probabilities too close to the mean). Its
+  ideal value is 1.
+
+There are no universally accepted cutoffs, but a useful guide is to check
+whether the confidence intervals include the ideal values. Also, some authors consider a calibration slope of at least 0.9 acceptable, i.e., predictions no more than 10% too extreme (Riley et al., 2020).
+
+These numbers were also shown by `res`. Here, the
+calibration-in-the-large is close to zero and the slope is close to one, i.e.,
+the probabilities are, on average, about right, and only slightly too extreme.
+
+Two notes of caution. First, with small samples like this one, these estimates
+are quite imprecise, as their wide confidence intervals show. Second, the calibration-in-the-large depends on the
+proportion of patients who relapse in the sample. If this proportion differs
+from the proportion in the population where the model will be used, the model
+will be miscalibrated there, however well calibrated it seems in the
+cross-validation. We will come back to this below.
+
+
+## Step 3: Which variables are relevant?
+
+### How often is each variable selected?
+
+The lasso selects variables, but which ones it selects may change a bit with
+the specific patients used to build the model. The cross-validation built 10
+models, each with a slightly different group of patients, and they are stored in
+`res$models`. `glmnet_get.items.count` tells in which proportion of these
+models each variable was selected (Radua et al., submitted). We may look at those selected in at least
+90% of the folds:
+
+```{r}
+count = glmnet_get.items.count(res$models)
+count[which(count >= 0.9)]
+```
+
+Variables selected in all or almost all models are **stable**: the lasso finds
+them whatever the patients used. Variables selected in few models are
+unstable, and we should be careful interpreting them.
+
+### How much does each variable weigh?
+
+Being selected does not mean being important: a variable may be selected in
+all models but have a tiny coefficient. `glmnet_get.items.relevance` estimates
+the **relevance** of each variable, i.e., its share of the total weight of the
+model, from the size of its standardized coefficient (standardized so that
+variables measured in different units can be compared) (Solanes et al., 2022;
+Salazar de Pablo et al., 2025). It averages the
+relevance across the 10 models, and the relevances of all variables add up to 1.
+We may look at those with at least 5% relevance:
+
+```{r}
+relevance = glmnet_get.items.relevance(res$models)
+round(relevance[which(relevance >= 0.05)], 3)
+```
+
+The two functions answer different questions, so it is useful to look at
+both: a relevant variable selected in all models is much more convincing than
+a variable that is relevant in a few models only.
+
+
+## Step 4: The model to use with new patients
+
+### Two options
+
+The cross-validation estimates how well the models work, but with the cv(),
+we built 10 models (one for each fold), so which model
+should you use with future patients? There are two reasonable options.
+
+The first option is to build the model again, using the same `fit_fun` with all
+the patients:
+
+```{r}
+m_all = glmnet_fit(x, y, family = "binomial")
+```
+
+The second option is to choose, among the 10 models built during the
+cross-validation, the most representative one. `glmnet_get.main.model` selects
+the model whose variables are most similar to the variables of the other models
+(according to the Dice coefficient), and if there are several equally
+representative models, it averages them (Sobregrau et al., 2024; Salazar de
+Pablo et al., 2025):
+
+```{r}
+m_main = glmnet_get.main.model(res$models, verbose = FALSE)
+```
+
+The first option uses all the patients, so it may be slightly more accurate.
+The second option uses one of the models whose accuracy was actually estimated
+in the cross-validation, and it is useful when, as we will see in another
+tutorial, the cross-validation involves several models per fold (e.g., one for
+each imputation of the missing values). Let's use our crystal ball to see how
+both work in the new patients:
+
+```{r}
+y.pred_all = predict(m_all, x_new)
+y.pred_main = predict(m_main, x_new)
+simple.accuracy(y_new, y.pred_all, "auc")
+simple.accuracy(y_new, y.pred_main, "auc")
+simple.calibration(y_new, y.pred_all, "binomial")
+simple.calibration(y_new, y.pred_main, "binomial")
+```
+
+Both models discriminate similarly in the new patients, and their AUCs are in
+line with the one estimated by the cross-validation.
+
+However, the calibration-in-the-large is now a bit positive: the models slightly
+underestimate the probability of relapse. This might be because fewer of our 100
+patients relapsed compared to the new patients. This is one reason why models
+should be validated in independent samples, and why sharing your model is so
+useful (Radua & Koutsouleris, 2024): others can test it, and recalibrate it if
+needed, in their own patients.
+
+### Estimating the probability of relapse of a new patient
+
+Finally, to estimate the probability of relapse of a single new patient, use
+`predict` with the data of this patient. For instance, for the first new
+patient:
+
+```{r}
+new_patient = x_new[1, , drop = FALSE]
+predict(m_main, new_patient)
+```
+
+The model estimates that this patient has a high probability of relapse. Note
+the `drop = FALSE`: `x_new[1, ]` would return a vector, whereas `predict` needs
+a matrix, even if it only has one row.
+
+
+## Summary
+
+- Keep the probabilities (do not round them) to assess the model fully.
+- The **AUC** measures discrimination without choosing a threshold.
+- The **calibration-in-the-large** and the **calibration slope**
+  (`simple.calibration`) measure whether the estimated probabilities are
+  correct.
+- `glmnet_get.items.count` tells how stable the selection of each variable
+  is, and `glmnet_get.items.relevance` how much each variable weighs.
+- The model to use with future patients can be built with `fit_fun` using all
+  the patients, or chosen among the cross-validation models with
+  `glmnet_get.main.model`. Use `predict` to apply it to new patients.
+
+In the next tutorial, [Missing data](missing-data.html) (`vignette("missing-data")`),
+you will learn what to do when some data are missing.
+
+
+## References
+
+Radua, J., Koutsouleris, N. (2024) Ten simple rules for using machine learning
+in mental health research. *Biological Psychiatry*, 96, 511–513, doi:
+[10.1016/j.biopsych.2023.11.012](https://doi.org/10.1016/j.biopsych.2023.11.012).
+
+Radua, J., Rivas-Fernandez, M.A., Lindin, M., Diaz, F., Zurron, M.,
+Pereiro, A.X., Lojo-Seoane, C., De Prisco, M., Oliva, V., Vilajosana, E., Vieta,
+E., Galdo-Alvarez, S. Submitted
+
+Riley, R.D., Ensor, J., Snell, K.I.E., Harrell, F.E., Martin, G.P., Reitsma,
+J.B., Moons, K.G.M., Collins, G., van Smeden, M. (2020) Calculating the sample
+size required for developing a clinical prediction model. *BMJ*, 368, m441,
+doi: [10.1136/bmj.m441](https://doi.org/10.1136/bmj.m441).
+
+Salazar de Pablo, G., Radua, J., Frearson, G., Young, A.H., Arango, C.,
+Kelleher, I., Sharma, A., Uhlhaas, P.J., Solmi, M., Fusar-Poli, P., Guinart, D.,
+Correll, C.U. (2025) Development and validation of a prognostic model and risk
+calculator for the estimation of bipolar-spectrum disorder risk in hospitalised
+adolescents with non-psychotic/non-bipolar mental disorders.
+*Molecular Psychiatry*, 31, 1333--1342, doi:
+[10.1038/s41380-025-03244-1](https://doi.org/10.1038/s41380-025-03244-1).
+
+Solanes, A., Mezquida, G., Janssen, J., Amoretti, S., Lobo, A., Gonzalez-Pinto,
+A., Arango, C., Vieta, E., Castro-Fornieles, J., Berge, D., Albacete, A., Gine,
+E., Parellada, M., Bernardo, M.; PEPs group (collaborators); Pomarol-Clotet, E.,
+Radua, J. (2022) Combining MRI and clinical data to detect high relapse risk
+after the first episode of psychosis. *Schizophrenia*, 8, 100, doi:
+[10.1038/s41537-022-00309-w](https://doi.org/10.1038/s41537-022-00309-w).
+
+Sobregrau, P., Bailles, E., Radua, J., Carreno, M., Donaire, A., Setoain, X.,
+Bargallo, N., Rumia, J., Sanchez-Vives, M.V., Pintor, L. (2024) Design and
+validation of a diagnostic suspicion checklist to differentiate epileptic from
+psychogenic nonepileptic seizures (PNES-DSC).
+*Journal of Psychosomatic Research*, 180, 111656, doi:
+[10.1016/j.jpsychores.2024.111656](https://doi.org/10.1016/j.jpsychores.2024.111656).

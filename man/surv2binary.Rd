@@ -19,11 +19,10 @@ surv2binary(x, subset_id = NULL)
 }
 \seealso{
   \code{\link{glmnet_predict}} for obtaining \code{"cox"} predictions.
-  \code{\link{cv}} for conducting a cross-validation.
+  \code{\link{cv}} for conducting a cross-validation; \code{vignette("other-outcomes-and-sites")} for a tutorial.
 }
 \examples{
 library(survival)
-library(pROC)
 
 # Create random x (predictors) and y (survival)
 x = matrix(rnorm(5000), ncol = 10)
@@ -46,10 +45,12 @@ y.binary = surv2binary(y)
 time_auc = NULL
 for (i in 1:length(y.binary)) {
   status_i = y.binary[[i]]$status
-  if (length(unique(na.omit(status_i))) == 2) {
+  # The status of the individuals censored before the timepoint is unknown (NA)
+  known = which(!is.na(status_i))
+  if (length(unique(status_i[known])) == 2) {
     time_auc = rbind(time_auc, data.frame(
       time = y.binary[[i]]$time,
-      auc = roc(status_i ~ res$predictions$y.pred, levels = 0:1, direction = "<")$auc
+      auc = simple.accuracy(status_i[known], res$predictions$y.pred[known], "auc")$auc
     ))
   }
 }

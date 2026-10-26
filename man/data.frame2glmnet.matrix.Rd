@@ -16,7 +16,7 @@ data.frame2glmnet.matrix(m, x)
 \author{Joaquim Radua and Aleix Solanes}
 \seealso{
   \code{\link{glmnet_predict}} for obtaining predictions,
-  \code{\link{cv}} for conducting a cross-validation.
+  \code{\link{cv}} for conducting a cross-validation; \code{vignette("easy.glmnet")} for a tutorial including categorical variables.
 }
 \examples{
 # Create random x (predictors) and y (binary)
@@ -42,11 +42,9 @@ predict_fun = function (m, x_test) {
 # Only 2 folds to ensure the example runs quickly
 res = cv(x, y, family = "binomial", fit_fun = fit_fun, predict_fun = predict_fun, nfolds = 2)
 
-# Show accuracy
-se = mean(res$predictions$y.pred[res$predictions$y == 1] > 0.5)
-sp = mean(res$predictions$y.pred[res$predictions$y == 0] < 0.5)
-bac = (se + sp) / 2
-cat("Sensitivity:", round(se, 2), "\n")
-cat("Specificity:", round(sp, 2), "\n")
-cat("Balanced accuracy:", round(bac, 2), "\n")
+# Show accuracy and calibration
+res
+
+# Balanced accuracy, sensitivity, and specificity
+simple.accuracy(res$predictions$y, round(res$predictions$y.pred), "bac")
 }

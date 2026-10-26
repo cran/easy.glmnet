@@ -1,0 +1,330 @@
+---
+title: "Missing data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Missing data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", error = FALSE)
+```
+
+In real studies, some data are almost always missing: a patient did not
+complete a questionnaire, a blood sample was lost, etc. In this tutorial, you
+will learn to:
+
+1. Understand why the simple solutions to missing data are usually bad ideas.
+2. Impute the missing values multiple times with `impute.glmnet.matrix_fit`
+   and `impute.glmnet.matrix`.
+3. Include the imputation in the cross-validation correctly.
+4. Interpret the models and predict new patients when there are several models
+   per fold (one per imputation).
+
+We assume that you have read the first two tutorials
+([Get started](easy.glmnet.html) and [Evaluating and interpreting your model](evaluating-and-interpreting.html)).
+
+This tutorial takes about 20–30 minutes. Imputing takes some time, so, unlike
+in the previous tutorials, the complete code of this tutorial takes a few
+minutes to run.
+
+
+## The data
+
+We use the same data as in the previous tutorials, with the 40 numeric
+variables. But now, let's imagine that two of the variables, `X21` and `X39`,
+could not be recorded in 30% of the patients:
+
+```{r}
+library(easy.glmnet)
+x = as.matrix(patients[, paste0("X", 1:40)])
+y = patients$relapse
+x_new = as.matrix(new_patients[, paste0("X", 1:40)])
+y_new = new_patients$relapse
+
+set.seed(1)
+for (v in c("X21", "X39")) {
+  x[sample(nrow(x), 0.3 * nrow(x)), v] = NA
+  x_new[sample(nrow(x_new), 0.3 * nrow(x_new)), v] = NA
+}
+```
+
+In R, missing values are represented by `NA` ("not available"):
+
+```{r}
+x[1:6, c("X20", "X21", "X22", "X39")]
+```
+
+Note that we also removed values in the new patients: in real life, future
+patients will also have missing data, and our model must be able to predict
+them too.
+
+
+## Step 1: The simple solutions
+
+`glmnet_fit` cannot use data with missing values, so we have to do something.
+There are two simple solutions, but both are usually bad ideas.
+
+### Removing the patients with missing values
+
+We could use only the patients with complete data:
+
+```{r}
+complete = complete.cases(x)
+sum(complete)
+```
+
+We would lose `r 100 - sum(complete)` of our 100 patients, and with them, a lot
+of information. Moreover, the model could not predict the future patients with
+missing values, i.e., `r round(100 * mean(!complete.cases(x_new)))`% of our
+new patients.
+
+### Removing the variables with missing values
+
+We could also remove `X21` and `X39`. But these were the two most relevant
+variables in the previous tutorial! Removing them would waste all the
+information that they have in the 70% of patients in whom they were recorded.
+
+### Imputing the missing values
+
+The better solution is to **impute** the missing values, i.e., to replace them
+with plausible values estimated from the other variables. For instance, if
+`X21` is associated with other variables, we can estimate the value of `X21`
+of a patient from the values of these other variables.
+
+Note, however, that simply replacing each missing value with its prediction
+(e.g., with `predict`) is not enough. A prediction is the expected value for a
+patient, so all the imputed values would lie exactly on the regression line:
+they would vary less than real values, and they would be more strongly
+associated with the other variables than real values are. Thus, a good
+imputation must add random noise of the right size to the predictions, so that
+the imputed values vary as much as real values would.
+
+
+## Step 2: Multiple imputation
+
+### How it works
+
+`impute.glmnet.matrix_fit` fits, for each variable, lasso models that estimate
+it from the other variables (Solanes et al., 2022; Palau et al., 2023; Salazar
+de Pablo et al., 2025). It does it even for the variables without missing
+values, because future patients may have missing values in any variable. Then,
+`impute.glmnet.matrix` uses these models to replace the missing values.
+
+As explained above, `impute.glmnet.matrix` does not simply use the
+predictions of these models: it adds random noise with the size of the
+prediction error of each imputation model (for binary variables, it randomly
+assigns 0 or 1 according to the predicted probability). Moreover, an imputed
+value is only an estimate, and pretending that we know it exactly would make
+us overconfident. For this reason, `impute.glmnet.matrix` imputes the values
+several times, creating several complete datasets, each with slightly
+different imputed values. This is called **multiple imputation**. Then, we will fit a model with
+each imputed dataset, and average their predictions.
+
+### Doing it
+
+As with `data.frame2glmnet.matrix` in the first tutorial, there are two
+functions: one that learns how to impute (`impute.glmnet.matrix_fit`) and one
+that applies the imputation (`impute.glmnet.matrix`). Let's see what they do
+with all our patients:
+
+```{r}
+m_impute = impute.glmnet.matrix_fit(x, verbose = FALSE)
+x_imputed = impute.glmnet.matrix(m_impute, x, nimp = 5, verbose = FALSE)
+```
+
+`nimp` is the number of imputations. `x_imputed` is a list of 5 complete
+matrices. For example, these are the first rows of the first two imputed
+datasets:
+
+```{r}
+x_imputed[[1]][1:6, c("X20", "X21", "X22", "X39")]
+x_imputed[[2]][1:6, c("X20", "X21", "X22", "X39")]
+```
+
+The observed values are the same in all the imputed datasets, whereas the
+imputed values (those that were `NA`) differ slightly. In this tutorial, we
+use 5 imputations so that the code runs faster, but in a real study, we
+recommend using more (the default is 20).
+
+Note that we only imputed the predictors, never the outcome: `y` was not
+included in `x`. In the new patients, the outcome is what we want to predict,
+so it cannot be used to impute anything. Similarly, patients whose outcome is
+missing cannot be used to build the model, so they must be excluded (with
+survival outcomes, patients lost to follow-up are instead censored, as you will
+see in the last tutorial).
+
+
+## Step 3: Imputation within the cross-validation
+
+### Lesson 2 again
+
+Imputing learns from the data: `impute.glmnet.matrix_fit` finds the models to
+estimate the missing values, and it learns these models from the patients we
+give it. Thus, following Lesson 2 of the first tutorial, the imputation must be
+inside `fit_fun`, using only the training patients. Then, `predict_fun`
+imputes the test patients with the models learned from the training patients,
+exactly as we would do with a future patient.
+
+### The code
+
+Now, the model has two parts: the imputation models, and one lasso model for
+each imputed dataset. `fit_fun` returns both in a `list`:
+
+```{r}
+nimp = 5
+fit_fun = function (x_training, y_training) {
+  m = list(
+    impute = impute.glmnet.matrix_fit(x_training, verbose = FALSE),
+    lasso = list()
+  )
+  x_imputed = impute.glmnet.matrix(m$impute, x_training, nimp = nimp, verbose = FALSE)
+  for (i in 1:nimp) {
+    m$lasso[[i]] = glmnet_fit(x_imputed[[i]], y_training, family = "binomial")
+  }
+  m
+}
+```
+
+`predict_fun` imputes the test patients, applies each lasso model to its
+imputed dataset, and averages the predictions:
+
+```{r}
+predict_fun = function (m, x_test) {
+  x_imputed = impute.glmnet.matrix(m$impute, x_test, nimp = nimp, verbose = FALSE)
+  y.pred = NULL
+  for (i in 1:nimp) {
+    y.pred = cbind(y.pred, predict(m$lasso[[i]], x_imputed[[i]]))
+  }
+  rowMeans(y.pred)
+}
+```
+
+(`cbind` puts the predictions of the different imputations side by side, as
+columns of a matrix, and `rowMeans` averages each row, i.e., each patient.)
+
+Now we can run the cross-validation as usual. This is the step that takes a
+few minutes:
+
+```{r, warning = FALSE}
+res = cv(x, y, family = "binomial", fit_fun, predict_fun, verbose = FALSE)
+res
+```
+
+(We hid the warning about `type.measure`, which you can ignore as explained in
+the first tutorial.)
+
+Despite the missing values, the cross-validation estimates an AUC similar to
+the one we obtained in the previous tutorial with complete data.
+
+The calibration slope, however, is higher than 1, i.e., the estimated
+probabilities are somewhat too modest. This may be because the imputed values of
+`X21` and `X39` are estimated from the other variables only, so they are less
+associated with relapse than the real values would be, and the model relies a
+bit less on these variables than it should. Keep in mind, though, that with 100
+patients, the calibration slope is quite imprecise (see the second tutorial for
+how to interpret it).
+
+
+## Step 4: Interpretation and new patients
+
+### Several models per fold
+
+In the previous tutorial, each fold had one lasso model. Now, each fold has
+5 lasso models (one per imputation), stored in the `lasso` element of the list
+returned by `fit_fun`. The functions to interpret the models accept this
+structure: we only have to tell them the name of this element with
+`childname`:
+
+```{r}
+count = glmnet_get.items.count(res$models, "lasso")
+count[which(count >= 0.9)]
+relevance = glmnet_get.items.relevance(res$models, "lasso")
+round(relevance[which(relevance >= 0.05)], 3)
+```
+
+Here, the count and the relevance are calculated across the
+`r length(res$models)` folds × `r nimp` imputations =
+`r length(res$models) * nimp` models.
+
+### The model to use with new patients
+
+As in the previous tutorial, there are two options. The first option is to
+build the model with all the patients, using `fit_fun`. The result includes
+the imputation and the lasso models, so `predict_fun` can apply it to
+new patients, including those with missing values:
+
+```{r, warning = FALSE}
+m_all = fit_fun(x, y)
+y.pred_all = predict_fun(m_all, x_new)
+cbind(simple.accuracy(y_new, y.pred_all, "auc"),
+      simple.calibration(y_new, y.pred_all, "binomial"))
+```
+
+The AUC in the new patients is in line with the
+cross-validation estimate, and the calibration slope is also higher than 1.
+The calibration-in-the-large is positive for the reason explained in the
+previous tutorial: fewer of our 100 patients relapsed than of the new
+patients.
+
+The second option is to choose the most representative lasso model with
+`glmnet_get.main.model`:
+
+```{r}
+m_main = glmnet_get.main.model(res$models, "lasso", verbose = FALSE)
+m_main
+```
+
+This model is useful to report and interpret the model (a single formula instead
+of `r length(res$models) * nimp` lasso models). However, to apply it to new
+patients with missing values, we would also need imputation models, so use the
+first option to predict new patients.
+
+
+## Summary
+
+- Removing the patients or the variables with missing values wastes
+  information, and removing the patients also prevents predicting future
+  patients with missing values.
+- `impute.glmnet.matrix_fit` learns how to impute the missing values, and
+  `impute.glmnet.matrix` imputes them multiple times (`nimp`).
+- Imputing learns from the data, so it must be inside `fit_fun` (Lesson 2).
+  Fit one model per imputed dataset, and average their predictions in
+  `predict_fun`.
+- Do not use the outcome to impute the predictors: future patients will not
+  have it.
+- With several models per fold, use `childname` in
+  `glmnet_get.items.count`, `glmnet_get.items.relevance`, and
+  `glmnet_get.main.model`.
+
+In the next tutorial, [Continuous and survival outcomes, regression to the mean, and multisite data](other-outcomes-and-sites.html)
+(`vignette("other-outcomes-and-sites")`), you will learn to predict continuous and
+survival outcomes, and to deal with data from several sites.
+
+
+## References
+
+Palau, P., Solanes, A., Madre, M., Saez-Francas, N., Sarro, S., Moro, N.,
+Verdolini, N., Sanchez, M., Alonso-Lana, S., Amann, B.L., Romaguera, A.,
+Martin-Subero, M., Fortea, L., Fuentes-Claramonte, P., Garcia-Leon, M.A.,
+Munuera, J., Canales-Rodriguez, E.J., Fernandez-Corcuera, P., Brambilla,
+P., Vieta, E., Pomarol-Clotet, E., Radua, J. (2023) Improved estimation of the
+risk of manic relapse by combining clinical and brain scan data.
+*Spanish Journal of Psychiatry and Mental Health*, 16, 235--243, doi:
+[10.1016/j.rpsm.2023.01.001](https://doi.org/10.1016/j.rpsm.2023.01.001).
+
+Salazar de Pablo, G., Radua, J., Frearson, G., Young, A.H., Arango, C.,
+Kelleher, I., Sharma, A., Uhlhaas, P.J., Solmi, M., Fusar-Poli, P., Guinart, D.,
+Correll, C.U. (2025) Development and validation of a prognostic model and risk
+calculator for the estimation of bipolar-spectrum disorder risk in hospitalised
+adolescents with non-psychotic/non-bipolar mental disorders.
+*Molecular Psychiatry*, 31, 1333--1342, doi:
+[10.1038/s41380-025-03244-1](https://doi.org/10.1038/s41380-025-03244-1).
+
+Solanes, A., Mezquida, G., Janssen, J., Amoretti, S., Lobo, A., Gonzalez-Pinto,
+A., Arango, C., Vieta, E., Castro-Fornieles, J., Berge, D., Albacete, A., Gine,
+E., Parellada, M., Bernardo, M.; PEPs group (collaborators); Pomarol-Clotet, E.,
+Radua, J. (2022) Combining MRI and clinical data to detect high relapse risk
+after the first episode of psychosis. *Schizophrenia*, 8, 100, doi:
+[10.1038/s41537-022-00309-w](https://doi.org/10.1038/s41537-022-00309-w).

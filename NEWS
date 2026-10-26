@@ -1,3 +1,27 @@
+easy.glmnet v1.2 (Release date: 2026-09-25)
+========================================
+
+Changes that may modify previous results:
+
+* "assign.folds" and "cv" with sites: there is a change in random generation for which results may differ from previous versions even if using the same seed.
+* "glmnet_fit" for "binomial": default "type.measure" is now "deviance" (use type.measure = "class" to reproduce previous versions).
+* "glmnet_fit" for "cox": models now have an artificial intercept (use cox.a0 = FALSE to reproduce previous versions).
+* "glmnet_get.main.model": now only averages models with the same variables.
+* "glmnet_predict": returns a vector.
+* "impute.glmnet.matrix_fit": now reproducible with set.seed.
+
+New features:
+
+* New functions "glmnet_get.items.count", "simple.accuracy", "simple.accuracy.test", and "simple.calibration".
+* New "print", "coef", and "predict" methods.
+* New datasets "patients" and "new_patients", and four vignettes.
+
+Other changes:
+
+* "cv" returns an object of class "cv".
+* Bug fixes for single-column inputs and models without variables.
+
+
 easy.glmnet v1.1 (Release date: 2026-02-07)
 ========================================
 

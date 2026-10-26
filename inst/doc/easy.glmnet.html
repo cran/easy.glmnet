@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Get started: correct machine learning made easy</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Get started: correct machine learning made
+easy</h1>
+
+
+
+<p>This tutorial shows you how to build a prediction model and, above
+all, how to find out <strong>how well it will really work in new
+patients</strong>. You do not need any previous knowledge of machine
+learning, and very little of R.</p>
+<p>This is the first of four tutorials:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Get started</strong> (this tutorial, about 30–40 minutes):
+building a model and estimating its accuracy correctly.</li>
+<li><a href="evaluating-and-interpreting.html">Evaluating and
+interpreting your model</a> (about 20–30 minutes): discrimination,
+calibration, relevant variables, and predicting new patients.</li>
+<li><a href="missing-data.html">Missing data</a> (about 20–30 minutes):
+multiple imputation.</li>
+<li><a href="other-outcomes-and-sites.html">Continuous and survival
+outcomes, regression to the mean, and multisite data</a> (about 30–40
+minutes).</li>
+</ol>
+<p>We recommend following all of them in order, but feel free to go
+directly to the one you need.</p>
+<p>In this tutorial, you will learn to:</p>
+<ol style="list-style-type: decimal">
+<li>Fit a prediction model with <code>glmnet_fit</code> and apply it
+with <code>glmnet_predict</code> (or just <code>predict</code>).</li>
+<li>Understand why evaluating a model with the same patients used to
+build it gives results that are too good to be true.</li>
+<li>Estimate the accuracy of a model correctly with <code>cv</code>
+(cross-validation).</li>
+<li>Include categorical variables with
+<code>data.frame2glmnet.matrix</code>.</li>
+</ol>
+<p>All the code runs in a few seconds, so we encourage you to run it
+yourself as you read.</p>
+<div id="new-to-r" class="section level2">
+<h2>New to R?</h2>
+<p>If you have used R before, you can skip this section.</p>
+<p><strong>Installing.</strong> Install R from <a href="https://cran.r-project.org" class="uri">https://cran.r-project.org</a> and, if you want a friendlier
+interface, RStudio from <a href="https://posit.co" class="uri">https://posit.co</a>. Then install this package by typing
+the following in the R console (you only need to do this once):</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;easy.glmnet&quot;</span>)</span></code></pre></div>
+<p>Every time you open R, load the package with:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(easy.glmnet)</span></code></pre></div>
+<p><strong>Objects.</strong> R stores values in objects with
+<code>=</code> (you may also see <code>&lt;-</code>, which does the
+same). Typing the name of an object shows its value:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>a <span class="ot">=</span> <span class="dv">5</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>a <span class="sc">*</span> <span class="dv">2</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt; [1] 10</span></span></code></pre></div>
+<p><strong>Vectors</strong> are lists of values, created with
+<code>c()</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>ages <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">34</span>, <span class="dv">51</span>, <span class="dv">28</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">mean</span>(ages)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt; [1] 37.66667</span></span></code></pre></div>
+<p><strong>Data frames</strong> are tables, where each row is an
+observation (e.g., a patient) and each column is a variable. You can get
+a column with <code>$</code>, and select rows and columns with
+<code>[rows, columns]</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>df <span class="ot">=</span> <span class="fu">data.frame</span>(<span class="at">age =</span> <span class="fu">c</span>(<span class="dv">34</span>, <span class="dv">51</span>, <span class="dv">28</span>), <span class="at">sex =</span> <span class="fu">c</span>(<span class="st">&quot;F&quot;</span>, <span class="st">&quot;M&quot;</span>, <span class="st">&quot;F&quot;</span>))</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>df<span class="sc">$</span>age</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; [1] 34 51 28</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>df[<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, ]       <span class="co"># rows 1 and 2, all columns</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt;   age sex</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; 1  34   F</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; 2  51   M</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>df[, <span class="st">&quot;sex&quot;</span>]     <span class="co"># all rows, column &quot;sex&quot;</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;F&quot; &quot;M&quot; &quot;F&quot;</span></span></code></pre></div>
+<p><strong>Functions</strong> take some inputs (arguments) and return an
+output. You can write your own with <code>function</code>. The last line
+is what the function returns:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>add_ten <span class="ot">=</span> <span class="cf">function</span> (x) {</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  x <span class="sc">+</span> <span class="dv">10</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>}</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="fu">add_ten</span>(<span class="dv">5</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; [1] 15</span></span></code></pre></div>
+<p>This is important because, as you will see, to cross-validate a model
+you will write two small functions.</p>
+<p>Finally, to get help about any function, type <code>?</code> followed
+by its name, e.g., <code>?mean</code> or <code>?glmnet_fit</code>.</p>
+</div>
+<div id="the-data" class="section level2">
+<h2>The data</h2>
+<p>The package includes two simulated datasets:</p>
+<ul>
+<li><code>patients</code>: 100 patients who were followed to see whether
+they relapsed. For each patient, we have 40 numeric variables
+(<code>X1</code> to <code>X40</code>), 3 categorical variables
+(<code>C1</code> to <code>C3</code>), and whether they relapsed
+(<code>relapse</code>: 1 = yes, 0 = no).</li>
+<li><code>new_patients</code>: 900 other patients from the same
+population.</li>
+</ul>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">dim</span>(patients)                 <span class="co"># number of rows (patients) and columns</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt; [1] 100  52</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>patients[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">41</span><span class="sc">:</span><span class="dv">47</span>)]  <span class="co"># first 5 patients, some of the columns</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt;         X1       X2       X3 C1 C2 C3   L1   L2   L3       site</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; 1 21.86773 30.67483 20.56925  C  C  C 15.8 25.0 33.0 Hospital D</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; 2 25.91822 30.55966 15.38873  C  B  A 10.0 19.3 16.5 Hospital D</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt; 3 20.82186 20.64611 33.09850  C  B  B 18.5 31.8 29.9 Hospital D</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; 4 32.97640 26.05366 27.59635  B  A  B 24.4 29.5 34.0 Hospital B</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; 5 26.64754 25.34698 24.72075  A  A  C 13.3 23.4 14.3 Hospital D</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="fu">table</span>(patients<span class="sc">$</span>relapse)       <span class="co"># how many relapsed</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt;  0  1 </span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; 56 44</span></span></code></pre></div>
+<p>Our goal is to use the data of the 100 patients to build a model that
+predicts relapse in future patients (<code>new_patients</code>), and to
+know how accurate these predictions will be.</p>
+<p>In a real study, you would not have <code>new_patients</code>: future
+patients have not arrived yet! Here we have them because the data are
+simulated, and we will use them as a “crystal ball” to check which
+methods tell us the truth about the accuracy of our models.</p>
+</div>
+<div id="step-1-a-first-prediction-model" class="section level2">
+<h2>Step 1: A first prediction model</h2>
+<div id="preparing-the-data" class="section level3">
+<h3>Preparing the data</h3>
+<p>Most prediction functions need the predictors as a numeric
+<strong>matrix</strong> (a table with only numbers) and the outcome as a
+<strong>vector</strong> (a single row or column of elements). Let’s
+start with the 40 numeric variables:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>x <span class="ot">=</span> <span class="fu">as.matrix</span>(patients[, <span class="dv">1</span><span class="sc">:</span><span class="dv">40</span>])  <span class="co"># columns X1, X2, ..., X40</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>y <span class="ot">=</span> patients<span class="sc">$</span>relapse</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>x_new <span class="ot">=</span> <span class="fu">as.matrix</span>(new_patients[, <span class="dv">1</span><span class="sc">:</span><span class="dv">40</span>])</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>y_new <span class="ot">=</span> new_patients<span class="sc">$</span>relapse</span></code></pre></div>
+<p>Some steps of this tutorial involve randomness. To obtain exactly the
+same results as shown here, we fix the “seed” of the random number
+generator:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span></code></pre></div>
+</div>
+<div id="a-standard-logistic-regression" class="section level3">
+<h3>A standard logistic regression</h3>
+<p>Many researchers would start with a standard logistic regression
+including all the variables:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>m_glm <span class="ot">=</span> <span class="fu">glm</span>(y <span class="sc">~</span> ., <span class="at">data =</span> <span class="fu">data.frame</span>(x), <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co">#&gt; Warning: glm.fit: algorithm did not converge</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt; Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</span></span></code></pre></div>
+<p>R warns us that the fitted probabilities are 0 or 1. Keep this in
+mind, it is a first sign of trouble. Let’s see how well the model
+predicts relapse in our patients. The function <code>predict</code>
+returns, for each patient, the probability of relapse, and
+<code>round</code> converts it into a prediction: 1 (relapse) if the
+probability is higher than 0.5, or 0 (no relapse) otherwise:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>y.pred <span class="ot">=</span> <span class="fu">round</span>(<span class="fu">predict</span>(m_glm, <span class="at">type =</span> <span class="st">&quot;response&quot;</span>))</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="fu">simple.accuracy</span>(y, y.pred, <span class="st">&quot;bac&quot;</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt;   bac bac.lwr bac.upr se    se.lwr se.upr sp    sp.lwr sp.upr</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt; 1   1  0.9635       1  1 0.9448164      1  1 0.9563268      1</span></span></code></pre></div>
+<p><code>simple.accuracy</code> compares the actual outcomes
+(<code>y</code>) with the predictions (<code>y.pred</code>). Here, it
+returns three numbers, each with the lower (.lwr) and upper (.upr)
+limits of its 95% confidence interval:</p>
+<ul>
+<li><code>se</code> (sensitivity): the proportion of patients who
+relapsed that the model correctly predicted would relapse. 1 (i.e.,
+100%) means that the model correctly predicted all the patients who
+relapsed.</li>
+<li><code>sp</code> (specificity): the proportion of patients who did
+not relapse that the model correctly predicted would not relapse. 1
+(i.e., 100%) means that the model correctly predicted all the patients
+who did not relapse.</li>
+<li><code>bac</code> (balanced accuracy): the mean of the two.</li>
+</ul>
+<p>A perfect model! Too good to be true? Let’s use our crystal ball and
+apply the model to the new patients:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>y_new.pred <span class="ot">=</span> <span class="fu">round</span>(<span class="fu">predict</span>(m_glm, <span class="fu">data.frame</span>(x_new), <span class="at">type =</span> <span class="st">&quot;response&quot;</span>))</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="fu">simple.accuracy</span>(y_new, y_new.pred, <span class="st">&quot;bac&quot;</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="co">#&gt;         bac bac.lwr bac.upr        se   se.lwr    se.upr        sp    sp.lwr</span></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="co">#&gt; 1 0.6777762  0.6465  0.7075 0.6770601 0.632779 0.7190669 0.6784922 0.6343522</span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="co">#&gt;      sp.upr</span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="co">#&gt; 1 0.7203496</span></span></code></pre></div>
+<p>In new patients, the balanced accuracy drops quite a bit. What
+happened?</p>
+<p>The model has <strong>memorized</strong> the 100 patients instead of
+learning general rules. With 40 variables and only 100 patients, the
+model can adjust to the random particularities of most or all patients,
+which will not be repeated in new patients. This is called
+<strong>overfitting</strong>. It is like a student who memorizes the
+answers of a mock exam: they get a perfect score in that exam, but not
+in the real one.</p>
+</div>
+<div id="a-lasso-model" class="section level3">
+<h3>A lasso model</h3>
+<p>A lasso model is a type of regression designed to reduce overfitting:
+it makes the coefficients smaller (“shrinks” them) and can remove the
+variables that do not seem useful. <code>glmnet_fit</code> fits a lasso
+model in one line (Solanes et al., 2022):</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>m_lasso <span class="ot">=</span> <span class="fu">glmnet_fit</span>(x, y, <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="co">#&gt; Warning in glmnet_fit(x, y, family = &quot;binomial&quot;): In easy.glmnet 1.2, the</span></span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt; default &#39;type.measure&#39; for &quot;binomial&quot; changed from &quot;class&quot; to glmnet &quot;default&quot;</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co">#&gt; (&quot;deviance&quot;). Use type.measure = &quot;class&quot; to reproduce the results of previous</span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt; versions. This warning is shown once per session.</span></span></code></pre></div>
+<p>(If you see a warning about <code>type.measure</code>, it only
+informs users of previous versions of the package that a default setting
+has changed; you can ignore it.)</p>
+<p>To apply it to some patients, use <code>glmnet_predict</code> (or
+just <code>predict</code>), which returns the probabilities of
+relapse:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>y.pred <span class="ot">=</span> <span class="fu">round</span>(<span class="fu">predict</span>(m_lasso, x))</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="fu">simple.accuracy</span>(y, y.pred, <span class="st">&quot;bac&quot;</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co">#&gt;        bac bac.lwr bac.upr        se    se.lwr    se.upr        sp    sp.lwr</span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co">#&gt; 1 0.950487 0.88875   0.978 0.9545455 0.8620847 0.9904354 0.9464286 0.8638995</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="co">#&gt;      sp.upr</span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co">#&gt; 1 0.9846831</span></span></code></pre></div>
+<p>Again, in the same patients used to build the model, the balanced
+accuracy is very high . Let’s look at the new patients:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>y_new.pred <span class="ot">=</span> <span class="fu">round</span>(<span class="fu">predict</span>(m_lasso, x_new))</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="fu">simple.accuracy</span>(y_new, y_new.pred, <span class="st">&quot;bac&quot;</span>)</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="co">#&gt;         bac bac.lwr bac.upr        se    se.lwr    se.upr        sp    sp.lwr</span></span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="co">#&gt; 1 0.7399049  0.7105 0.76725 0.6971047 0.6534387 0.7382388 0.7827051 0.7429126</span></span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="co">#&gt;      sp.upr</span></span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="co">#&gt; 1 0.8188828</span></span></code></pre></div>
+<p>The lasso model may work some better than the standard logistic
+regression in new patients, but its accuracy is still much lower than it
+seemed. Thus, whatever the method (Radua &amp; Koutsouleris, 2024):</p>
+<blockquote>
+<p><strong>Lesson 1: Never evaluate a model with the same patients that
+you used to build it.</strong></p>
+</blockquote>
+<p>But in a real study, we have no crystal ball. How can we know the
+accuracy of a model in new patients if we only have the patients used to
+build it? The answer is cross-validation.</p>
+</div>
+</div>
+<div id="step-2-cross-validation" class="section level2">
+<h2>Step 2: Cross-validation</h2>
+<div id="the-idea" class="section level3">
+<h3>The idea</h3>
+<p>Cross-validation splits the patients into several groups called
+<strong>folds</strong> (usually 10). Then, for each fold:</p>
+<ol style="list-style-type: decimal">
+<li>It builds a model using the patients of all the other folds (the
+<strong>training</strong> set).</li>
+<li>It applies this model to the patients of this fold (the
+<strong>test</strong> set).</li>
+</ol>
+<pre><code>         Fold 1   Fold 2   Fold 3   ...   Fold 10
+Round 1:  test    train    train    ...    train
+Round 2:  train   test     train    ...    train
+Round 3:  train   train    test     ...    train
+...
+Round 10: train   train    train    ...    test</code></pre>
+<p>At the end, each patient has a prediction from a model that never saw
+them, just like a new patient. Comparing these predictions with the
+actual outcomes tells us how well the model works in “new” patients.</p>
+</div>
+<div id="doing-it-with-cv" class="section level3">
+<h3>Doing it with <code>cv</code></h3>
+<p>The function <code>cv</code> does all the work (dividing the patients
+into folds, building the models, applying them, and collecting the
+predictions), but it needs you to tell it two things, as two small
+functions:</p>
+<ul>
+<li><code>fit_fun</code>: how to build a model from the training set. It
+receives the predictors and outcomes of the training set and must return
+the model.</li>
+<li><code>predict_fun</code>: how to apply a model to the test set. It
+receives the model and the predictors of the test set and must return
+the predictions.</li>
+</ul>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>fit_fun <span class="ot">=</span> <span class="cf">function</span> (x_training, y_training) {</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>  <span class="fu">glmnet_fit</span>(x_training, y_training, <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>}</span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>predict_fun <span class="ot">=</span> <span class="cf">function</span> (m, x_test) {</span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a>  <span class="fu">round</span>(<span class="fu">predict</span>(m, x_test))</span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a>}</span></code></pre></div>
+<p>Note that these functions do exactly what we did before with
+<code>glmnet_fit</code> and <code>glmnet_predict</code> (or just
+<code>predict</code>), but with the training and test sets of each fold.
+Now we can run the cross-validation:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a>res <span class="ot">=</span> <span class="fu">cv</span>(x, y, <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>, fit_fun, predict_fun, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<p><code>res$predictions</code> contains, for each patient, the fold,
+the actual outcome and the prediction:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="fu">head</span>(res<span class="sc">$</span>predictions)</span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a><span class="co">#&gt;   fold y y.pred</span></span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a><span class="co">#&gt; 1    4 0      0</span></span>
+<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a><span class="co">#&gt; 2    7 0      0</span></span>
+<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a><span class="co">#&gt; 3    5 1      0</span></span>
+<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a><span class="co">#&gt; 4    9 0      0</span></span>
+<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a><span class="co">#&gt; 5    7 0      0</span></span>
+<span id="cb19-8"><a href="#cb19-8" tabindex="-1"></a><span class="co">#&gt; 6    9 1      1</span></span></code></pre></div>
+<p>Let’s see the accuracy (we just have to print the <code>cv</code>
+object):</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a>res</span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a><span class="co">#&gt; 10-fold CV of 100 binomial outcomes:</span></span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a><span class="co">#&gt;     bac bac.lwr bac.upr    se se.lwr se.upr    sp sp.lwr sp.upr</span></span>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a><span class="co">#&gt; 1 0.718   0.624   0.796 0.614  0.466  0.747 0.821  0.706  0.904</span></span></code></pre></div>
+<p>The cross-validation estimates a balanced accuracy very close to the
+one that the lasso model actually achieved in the new patients. Unlike
+the evaluation with the same patients, the cross-validation tells the
+truth, even without a crystal ball.</p>
+</div>
+<div id="a-note-on-randomness" class="section level3">
+<h3>A note on randomness</h3>
+<p><code>cv</code> assigns the patients to the folds randomly (though
+ensuring that each fold has a similar proportion of patients who
+relapsed). With another seed, the folds would be different, and the
+estimate would change a bit, especially in small samples like this one.
+This is why we used <code>set.seed</code>: to make the results
+reproducible.</p>
+</div>
+</div>
+<div id="step-3-data-leakage" class="section level2">
+<h2>Step 3: Data leakage</h2>
+<div id="cross-validation-can-also-be-optimistic-if-used-wrongly" class="section level3">
+<h3>Cross-validation can also be optimistic if used wrongly</h3>
+<p>Imagine that, before the cross-validation, we select the variables
+with the lasso model that we fitted in Step 1 with all the patients
+(<code>m_lasso</code>; recall that the lasso sets some coefficients
+exactly to zero, so it uses only some of the variables), and then we
+cross-validate a model that uses only these variables. It seems
+reasonable: we only keep the variables that seem useful. Let’s try:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a>selected <span class="ot">=</span> <span class="fu">names</span>(m_lasso<span class="sc">$</span>beta)  <span class="co"># variables selected by the lasso of Step 1</span></span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a>res <span class="ot">=</span> <span class="fu">cv</span>(x[, selected], y, <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>, fit_fun, predict_fun, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a>res</span>
+<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a><span class="co">#&gt; 10-fold CV of 100 binomial outcomes:</span></span>
+<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a><span class="co">#&gt;     bac bac.lwr bac.upr    se se.lwr se.upr    sp sp.lwr sp.upr</span></span>
+<span id="cb21-6"><a href="#cb21-6" tabindex="-1"></a><span class="co">#&gt; 1 0.797   0.707   0.864 0.773  0.634  0.877 0.821  0.706  0.904</span></span></code></pre></div>
+<p>The cross-validation estimates a higher balanced accuracy than in
+step 2! But let’s use our crystal ball: we build the model with these
+variables and all the patients, and apply it to the new patients:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a>m_leak <span class="ot">=</span> <span class="fu">glmnet_fit</span>(x[, selected], y, <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb22-2"><a href="#cb22-2" tabindex="-1"></a>y_new.pred <span class="ot">=</span> <span class="fu">round</span>(<span class="fu">predict</span>(m_leak, x_new[, selected]))</span>
+<span id="cb22-3"><a href="#cb22-3" tabindex="-1"></a><span class="fu">simple.accuracy</span>(y_new, <span class="fu">c</span>(y_new.pred), <span class="st">&quot;bac&quot;</span>)</span>
+<span id="cb22-4"><a href="#cb22-4" tabindex="-1"></a><span class="co">#&gt;         bac bac.lwr bac.upr        se    se.lwr    se.upr        sp    sp.lwr</span></span>
+<span id="cb22-5"><a href="#cb22-5" tabindex="-1"></a><span class="co">#&gt; 1 0.7266209  0.6965 0.75475 0.7060134 0.6626511 0.7467295 0.7472284 0.7056266</span></span>
+<span id="cb22-6"><a href="#cb22-6" tabindex="-1"></a><span class="co">#&gt;      sp.upr</span></span>
+<span id="cb22-7"><a href="#cb22-7" tabindex="-1"></a><span class="co">#&gt; 1 0.7856688</span></span></code></pre></div>
+<p>Quite less. The cross-validation was too optimistic. Why? Because the
+variables were selected using all the patients, including those that
+later played the role of test set! In other words, the selection “saw”
+the test set, so these patients were no longer like new patients. This
+is called <strong>data leakage</strong>: information from the test set
+leaks into the models.</p>
+</div>
+<div id="the-solution" class="section level3">
+<h3>The solution</h3>
+<p>There is a simple solution (Radua &amp; Koutsouleris, 2024):</p>
+<blockquote>
+<p><strong>Lesson 2: Every step that learns something from the data is
+part of the model. Thus, it must be inside <code>fit_fun</code>, and
+must use only the training set.</strong></p>
+</blockquote>
+</div>
+</div>
+<div id="step-4-categorical-variables" class="section level2">
+<h2>Step 4: Categorical variables</h2>
+<p>So far, we have only used the numeric variables. But our patients
+also have three categorical variables (<code>C1</code>, <code>C2</code>,
+and <code>C3</code>), with values <code>A</code>, <code>B</code>, or
+<code>C</code>. <code>glmnet_fit</code> needs a numeric matrix, so we
+must first convert each categorical variable into several numeric
+variables (called “dummy” variables), one for each value.
+<code>data.frame2glmnet.matrix</code> does it for you:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a>df <span class="ot">=</span> patients[, <span class="dv">1</span><span class="sc">:</span><span class="dv">43</span>] <span class="co"># all predictors</span></span>
+<span id="cb23-2"><a href="#cb23-2" tabindex="-1"></a>df2mat <span class="ot">=</span> <span class="fu">data.frame2glmnet.matrix_fit</span>(df)</span>
+<span id="cb23-3"><a href="#cb23-3" tabindex="-1"></a>x_all <span class="ot">=</span> <span class="fu">data.frame2glmnet.matrix</span>(df2mat, df)</span>
+<span id="cb23-4"><a href="#cb23-4" tabindex="-1"></a>x_all[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="dv">41</span><span class="sc">:</span><span class="dv">49</span>]</span>
+<span id="cb23-5"><a href="#cb23-5" tabindex="-1"></a><span class="co">#&gt;      C1:A C1:B C1:C C2:A C2:B C2:C C3:A C3:B C3:C</span></span>
+<span id="cb23-6"><a href="#cb23-6" tabindex="-1"></a><span class="co">#&gt; [1,]    0    0    1    0    0    1    0    0    1</span></span>
+<span id="cb23-7"><a href="#cb23-7" tabindex="-1"></a><span class="co">#&gt; [2,]    0    0    1    0    1    0    1    0    0</span></span>
+<span id="cb23-8"><a href="#cb23-8" tabindex="-1"></a><span class="co">#&gt; [3,]    0    0    1    0    1    0    0    1    0</span></span>
+<span id="cb23-9"><a href="#cb23-9" tabindex="-1"></a><span class="co">#&gt; [4,]    0    1    0    1    0    0    0    1    0</span></span>
+<span id="cb23-10"><a href="#cb23-10" tabindex="-1"></a><span class="co">#&gt; [5,]    1    0    0    1    0    0    0    0    1</span></span></code></pre></div>
+<p>For example, <code>C1:A</code> is 1 if the patient has
+<code>C1 = A</code>, and 0 otherwise.</p>
+<p>Note that there are two functions.
+<code>data.frame2glmnet.matrix_fit</code> <strong>learns</strong> how to
+convert the data (which variables are categorical, which values they can
+take, etc.), and <code>data.frame2glmnet.matrix</code>
+<strong>applies</strong> this conversion to some data. Following Lesson
+2, the conversion must be learned inside <code>fit_fun</code>, using
+only the training set. Converting the data learns much less than
+selecting variables, but it is a good habit, and other steps learn a lot
+(e.g., imputing missing values, as you will see in a subsequent
+tutorial).</p>
+<p>So, the model now has two parts: the conversion and the lasso.
+<code>fit_fun</code> can return both in a <code>list</code>, and
+<code>predict_fun</code> can then use both:</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a>fit_fun <span class="ot">=</span> <span class="cf">function</span> (df_training, y_training) {</span>
+<span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a>  df2mat <span class="ot">=</span> <span class="fu">data.frame2glmnet.matrix_fit</span>(df_training)</span>
+<span id="cb24-3"><a href="#cb24-3" tabindex="-1"></a>  x_training <span class="ot">=</span> <span class="fu">data.frame2glmnet.matrix</span>(df2mat, df_training)</span>
+<span id="cb24-4"><a href="#cb24-4" tabindex="-1"></a>  <span class="fu">list</span>(</span>
+<span id="cb24-5"><a href="#cb24-5" tabindex="-1"></a>    <span class="at">df2mat =</span> df2mat,</span>
+<span id="cb24-6"><a href="#cb24-6" tabindex="-1"></a>    <span class="at">lasso =</span> <span class="fu">glmnet_fit</span>(x_training, y_training, <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb24-7"><a href="#cb24-7" tabindex="-1"></a>  )</span>
+<span id="cb24-8"><a href="#cb24-8" tabindex="-1"></a>}</span>
+<span id="cb24-9"><a href="#cb24-9" tabindex="-1"></a>predict_fun <span class="ot">=</span> <span class="cf">function</span> (m, df_test) {</span>
+<span id="cb24-10"><a href="#cb24-10" tabindex="-1"></a>  x_test <span class="ot">=</span> <span class="fu">data.frame2glmnet.matrix</span>(m<span class="sc">$</span>df2mat, df_test)</span>
+<span id="cb24-11"><a href="#cb24-11" tabindex="-1"></a>  <span class="fu">round</span>(<span class="fu">predict</span>(m<span class="sc">$</span>lasso, x_test))</span>
+<span id="cb24-12"><a href="#cb24-12" tabindex="-1"></a>}</span>
+<span id="cb24-13"><a href="#cb24-13" tabindex="-1"></a>df <span class="ot">=</span> patients[, <span class="dv">1</span><span class="sc">:</span><span class="dv">43</span>] <span class="co"># all predictors</span></span>
+<span id="cb24-14"><a href="#cb24-14" tabindex="-1"></a>res <span class="ot">=</span> <span class="fu">cv</span>(df, y, <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>, fit_fun, predict_fun, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb24-15"><a href="#cb24-15" tabindex="-1"></a>res</span>
+<span id="cb24-16"><a href="#cb24-16" tabindex="-1"></a><span class="co">#&gt; 10-fold CV of 100 binomial outcomes:</span></span>
+<span id="cb24-17"><a href="#cb24-17" tabindex="-1"></a><span class="co">#&gt;     bac bac.lwr bac.upr    se se.lwr se.upr    sp sp.lwr sp.upr</span></span>
+<span id="cb24-18"><a href="#cb24-18" tabindex="-1"></a><span class="co">#&gt; 1 0.718   0.624   0.796 0.614  0.466  0.747 0.821  0.706  0.904</span></span></code></pre></div>
+<p>The results are the same as without the categorical variables
+because, in these data, they are unrelated to relapse, so the lasso does
+not select them.</p>
+</div>
+<div id="summary" class="section level2">
+<h2>Summary</h2>
+<ul>
+<li>A model evaluated with the same patients used to build it looks much
+better than it is (<strong>Lesson 1</strong>).</li>
+<li>Cross-validation (<code>cv</code>) estimates how well the model will
+work in new patients. You only need to write <code>fit_fun</code> (how
+to build the model) and <code>predict_fun</code> (how to apply it).</li>
+<li>Categorical variables can be converted into numeric variables using
+<code>data.frame2glmnet.matrix</code>.</li>
+<li>Every step that learns from the data, such as selecting variables or
+even converting categorical variables, is part of the model and goes
+inside <code>fit_fun</code>. Otherwise, the cross-validation will be too
+optimistic (<strong>Lesson 2</strong>).</li>
+</ul>
+<p>Both lessons are part of rule 4 of the ten simple rules for using
+machine learning in mental health research (Radua &amp; Koutsouleris,
+2024), which apply to other fields too. We recommend reading them
+all.</p>
+<p>In the next tutorial, <a href="evaluating-and-interpreting.html">Evaluating and interpreting your
+model</a> (<code>vignette(&quot;evaluating-and-interpreting&quot;)</code>), you
+will learn other ways to measure accuracy and how to interpret your
+models.</p>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p>Radua, J., Koutsouleris, N. (2024) Ten simple rules for using machine
+learning in mental health research. <em>Biological Psychiatry</em>, 96,
+511–513, doi: <a href="https://doi.org/10.1016/j.biopsych.2023.11.012">10.1016/j.biopsych.2023.11.012</a>.</p>
+<p>Solanes, A., Mezquida, G., Janssen, J., Amoretti, S., Lobo, A.,
+Gonzalez-Pinto, A., Arango, C., Vieta, E., Castro-Fornieles, J., Berge,
+D., Albacete, A., Gine, E., Parellada, M., Bernardo, M.; PEPs group
+(collaborators); Pomarol-Clotet, E., Radua, J. (2022) Combining MRI and
+clinical data to detect high relapse risk after the first episode of
+psychosis. <em>Schizophrenia</em>, 8, 100, doi: <a href="https://doi.org/10.1038/s41537-022-00309-w">10.1038/s41537-022-00309-w</a>.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

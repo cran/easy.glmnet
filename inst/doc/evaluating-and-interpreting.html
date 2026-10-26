@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Evaluating and interpreting your model</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Evaluating and interpreting your model</h1>
+
+
+
+<p>In the first tutorial (<a href="easy.glmnet.html">Get started</a>),
+you learned to build a prediction model and to estimate its accuracy
+correctly with cross-validation. In this tutorial, you will learn
+to:</p>
+<ol style="list-style-type: decimal">
+<li>Measure how well the model <strong>discriminates</strong> the
+patients who will relapse from those who will not, with the area under
+the ROC curve.</li>
+<li>Measure whether the probabilities that the model estimates are
+correct, i.e., whether the model is well
+<strong>calibrated</strong>.</li>
+<li>Find which variables are the most <strong>relevant</strong> for the
+predictions.</li>
+<li>Obtain the model that you would use with future patients, and use it
+to estimate the probability of relapse of a <strong>new
+patient</strong>.</li>
+</ol>
+<p>This tutorial takes about 20–30 minutes and, as in the first
+tutorial, all the code runs in a few seconds.</p>
+<div id="the-data-and-the-cross-validation" class="section level2">
+<h2>The data and the cross-validation</h2>
+<p>We use the same data as in the first tutorial, i.e., 100 patients to
+build and cross-validate the model, and 900 new patients that we will
+use as a “crystal ball”. To keep things simple, we only use the 40
+numeric variables:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(easy.glmnet)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>x <span class="ot">=</span> <span class="fu">as.matrix</span>(patients[, <span class="dv">1</span><span class="sc">:</span><span class="dv">40</span>])</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>y <span class="ot">=</span> patients<span class="sc">$</span>relapse</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>x_new <span class="ot">=</span> <span class="fu">as.matrix</span>(new_patients[, <span class="dv">1</span><span class="sc">:</span><span class="dv">40</span>])</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>y_new <span class="ot">=</span> new_patients<span class="sc">$</span>relapse</span></code></pre></div>
+<p>We cross-validate a lasso model as in the first tutorial, with one
+important difference: we will now use the <strong>probabilities</strong>
+of relapse, without rounding them to 0 or 1.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>fit_fun <span class="ot">=</span> <span class="cf">function</span> (x_training, y_training) {</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="fu">glmnet_fit</span>(x_training, y_training, <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>}</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>predict_fun <span class="ot">=</span> <span class="cf">function</span> (m, x_test) {</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  <span class="fu">predict</span>(m, x_test)</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>}</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>res <span class="ot">=</span> <span class="fu">cv</span>(x, y, <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>, fit_fun, predict_fun, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<p>(If you see a warning about <code>type.measure</code>, you can ignore
+it, as explained in the first tutorial.)</p>
+<p>Typing the name of the result of cv shows a summary of the accuracy
+and the calibration of the cross-validated predictions:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>res</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#&gt; 10-fold CV of 100 binomial outcomes:</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt;     auc auc.lwr auc.upr calibr.large calibr.large.lwr calibr.large.upr</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt; 1 0.801   0.714   0.888      -0.0691           -0.562            0.413</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt;   calibr.slope calibr.slope.lwr calibr.slope.upr</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; 1        0.813            0.481             1.22</span></span></code></pre></div>
+<p>Let’s see what these numbers mean.</p>
+</div>
+<div id="step-1-discrimination" class="section level2">
+<h2>Step 1: Discrimination</h2>
+<div id="probabilities-and-thresholds" class="section level3">
+<h3>Probabilities and thresholds</h3>
+<p>In the first tutorial, we converted the probabilities into
+predictions of 0 or 1 with <code>round</code>, i.e., we predicted a
+relapse if the probability was higher than 0.5. With these predictions,
+we could estimate the balanced accuracy:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>y.pred <span class="ot">=</span> <span class="fu">round</span>(res<span class="sc">$</span>predictions<span class="sc">$</span>y.pred)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">simple.accuracy</span>(res<span class="sc">$</span>predictions<span class="sc">$</span>y, y.pred, <span class="st">&quot;bac&quot;</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt;         bac bac.lwr bac.upr        se    se.lwr    se.upr        sp    sp.lwr</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; 1 0.7581169   0.667  0.8315 0.6590909 0.5124696 0.7855432 0.8571429 0.7484684</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt;      sp.upr</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; 1 0.9300705</span></span></code></pre></div>
+<p>However, 0.5 is an arbitrary <strong>threshold</strong>. For
+instance, if relapses are very harmful and the preventive treatment is
+cheap and safe, a clinician might prefer to treat all patients with a
+probability of relapse higher than 0.2. With another threshold, the
+sensitivity and the specificity would be different, and so would the
+balanced accuracy.</p>
+</div>
+<div id="the-area-under-the-roc-curve" class="section level3">
+<h3>The area under the ROC curve</h3>
+<p>The <strong>area under the ROC curve</strong> (AUC) measures how well
+the model discriminates, without choosing any threshold. It is the
+probability that, if we take at random a patient who relapsed and a
+patient who did not, the model estimates a higher probability of relapse
+for the first one. Thus, an AUC of 0.5 means that the model
+discriminates no better than tossing a coin, and an AUC of 1 means that
+it discriminates perfectly.</p>
+<p>The AUC was the first number shown by <code>res</code>, followed by
+the lower (<code>auc.lwr</code>) and upper (<code>auc.upr</code>) limits
+of its 95% confidence interval. You can also obtain them with
+<code>simple.accuracy</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">simple.accuracy</span>(res<span class="sc">$</span>predictions<span class="sc">$</span>y, res<span class="sc">$</span>predictions<span class="sc">$</span>y.pred, <span class="st">&quot;auc&quot;</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt;         auc   auc.lwr   auc.upr</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; 1 0.8011364 0.7142033 0.8880695</span></span></code></pre></div>
+</div>
+</div>
+<div id="step-2-calibration" class="section level2">
+<h2>Step 2: Calibration</h2>
+<div id="are-the-probabilities-correct" class="section level3">
+<h3>Are the probabilities correct?</h3>
+<p>A model may discriminate well but estimate wrong probabilities. For
+instance, it could correctly estimate that one patient has a higher risk
+than another, but estimate probabilities of 60% and 40% when the actual
+probabilities are 30% and 20%. If a clinician started a preventive
+treatment in all patients with a probability higher than 50%, they would
+unnecessarily treat the first patient. The agreement between the
+estimated probabilities and what actually happens is called
+<strong>calibration</strong>.</p>
+</div>
+<div id="calibration-in-the-large-and-calibration-slope" class="section level3">
+<h3>Calibration-in-the-large and calibration slope</h3>
+<p><code>simple.calibration</code> summarizes the calibration with two
+numbers, each with its 95% confidence interval:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">simple.calibration</span>(res<span class="sc">$</span>predictions<span class="sc">$</span>y, res<span class="sc">$</span>predictions<span class="sc">$</span>y.pred, <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt;   calibr.large calibr.large.lwr calibr.large.upr calibr.slope calibr.slope.lwr</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt; 1  -0.06905186       -0.5616115        0.4129425    0.8131361        0.4807838</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt;   calibr.slope.upr</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; 1         1.215632</span></span></code></pre></div>
+<ul>
+<li>The <strong>calibration-in-the-large</strong>
+(<code>calibr.large</code> in the output) tells whether the estimated
+probabilities are, on average, too high (negative values) or too low
+(positive values). Its ideal value is 0.</li>
+<li>The <strong>calibration slope</strong> (<code>calibr.slope</code> in
+the output) tells whether the estimated probabilities are too extreme
+(values lower than 1, e.g., probabilities too close to 0 or 1) or too
+modest (values higher than 1, e.g., probabilities too close to the
+mean). Its ideal value is 1.</li>
+</ul>
+<p>There are no universally accepted cutoffs, but a useful guide is to
+check whether the confidence intervals include the ideal values. Also,
+some authors consider a calibration slope of at least 0.9 acceptable,
+i.e., predictions no more than 10% too extreme (Riley et al., 2020).</p>
+<p>These numbers were also shown by <code>res</code>. Here, the
+calibration-in-the-large is close to zero and the slope is close to one,
+i.e., the probabilities are, on average, about right, and only slightly
+too extreme.</p>
+<p>Two notes of caution. First, with small samples like this one, these
+estimates are quite imprecise, as their wide confidence intervals show.
+Second, the calibration-in-the-large depends on the proportion of
+patients who relapse in the sample. If this proportion differs from the
+proportion in the population where the model will be used, the model
+will be miscalibrated there, however well calibrated it seems in the
+cross-validation. We will come back to this below.</p>
+</div>
+</div>
+<div id="step-3-which-variables-are-relevant" class="section level2">
+<h2>Step 3: Which variables are relevant?</h2>
+<div id="how-often-is-each-variable-selected" class="section level3">
+<h3>How often is each variable selected?</h3>
+<p>The lasso selects variables, but which ones it selects may change a
+bit with the specific patients used to build the model. The
+cross-validation built 10 models, each with a slightly different group
+of patients, and they are stored in <code>res$models</code>.
+<code>glmnet_get.items.count</code> tells in which proportion of these
+models each variable was selected (Radua et al., submitted). We may look
+at those selected in at least 90% of the folds:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>count <span class="ot">=</span> <span class="fu">glmnet_get.items.count</span>(res<span class="sc">$</span>models)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>count[<span class="fu">which</span>(count <span class="sc">&gt;=</span> <span class="fl">0.9</span>)]</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; X11 X14 X17 X21 X22 X28 X34 X38 X39  X5  X7 X33 </span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 1.0 0.9</span></span></code></pre></div>
+<p>Variables selected in all or almost all models are
+<strong>stable</strong>: the lasso finds them whatever the patients
+used. Variables selected in few models are unstable, and we should be
+careful interpreting them.</p>
+</div>
+<div id="how-much-does-each-variable-weigh" class="section level3">
+<h3>How much does each variable weigh?</h3>
+<p>Being selected does not mean being important: a variable may be
+selected in all models but have a tiny coefficient.
+<code>glmnet_get.items.relevance</code> estimates the
+<strong>relevance</strong> of each variable, i.e., its share of the
+total weight of the model, from the size of its standardized coefficient
+(standardized so that variables measured in different units can be
+compared) (Solanes et al., 2022; Salazar de Pablo et al., 2025). It
+averages the relevance across the 10 models, and the relevances of all
+variables add up to 1. We may look at those with at least 5%
+relevance:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>relevance <span class="ot">=</span> <span class="fu">glmnet_get.items.relevance</span>(res<span class="sc">$</span>models)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">round</span>(relevance[<span class="fu">which</span>(relevance <span class="sc">&gt;=</span> <span class="fl">0.05</span>)], <span class="dv">3</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt;   X21   X39   X22   X14    X5    X7   X11 </span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; 0.139 0.131 0.128 0.101 0.077 0.063 0.059</span></span></code></pre></div>
+<p>The two functions answer different questions, so it is useful to look
+at both: a relevant variable selected in all models is much more
+convincing than a variable that is relevant in a few models only.</p>
+</div>
+</div>
+<div id="step-4-the-model-to-use-with-new-patients" class="section level2">
+<h2>Step 4: The model to use with new patients</h2>
+<div id="two-options" class="section level3">
+<h3>Two options</h3>
+<p>The cross-validation estimates how well the models work, but with the
+cv(), we built 10 models (one for each fold), so which model should you
+use with future patients? There are two reasonable options.</p>
+<p>The first option is to build the model again, using the same
+<code>fit_fun</code> with all the patients:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>m_all <span class="ot">=</span> <span class="fu">glmnet_fit</span>(x, y, <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>)</span></code></pre></div>
+<p>The second option is to choose, among the 10 models built during the
+cross-validation, the most representative one.
+<code>glmnet_get.main.model</code> selects the model whose variables are
+most similar to the variables of the other models (according to the Dice
+coefficient), and if there are several equally representative models, it
+averages them (Sobregrau et al., 2024; Salazar de Pablo et al.,
+2025):</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>m_main <span class="ot">=</span> <span class="fu">glmnet_get.main.model</span>(res<span class="sc">$</span>models, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<p>The first option uses all the patients, so it may be slightly more
+accurate. The second option uses one of the models whose accuracy was
+actually estimated in the cross-validation, and it is useful when, as we
+will see in another tutorial, the cross-validation involves several
+models per fold (e.g., one for each imputation of the missing values).
+Let’s use our crystal ball to see how both work in the new patients:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>y.pred_all <span class="ot">=</span> <span class="fu">predict</span>(m_all, x_new)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>y.pred_main <span class="ot">=</span> <span class="fu">predict</span>(m_main, x_new)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="fu">simple.accuracy</span>(y_new, y.pred_all, <span class="st">&quot;auc&quot;</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt;         auc   auc.lwr   auc.upr</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt; 1 0.8273424 0.8011382 0.8535465</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="fu">simple.accuracy</span>(y_new, y.pred_main, <span class="st">&quot;auc&quot;</span>)</span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt;         auc  auc.lwr   auc.upr</span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt; 1 0.8160386 0.788921 0.8431562</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="fu">simple.calibration</span>(y_new, y.pred_all, <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co">#&gt;   calibr.large calibr.large.lwr calibr.large.upr calibr.slope calibr.slope.lwr</span></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co">#&gt; 1    0.2572726       0.09140591         0.423091    0.8667944        0.7511321</span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a><span class="co">#&gt;   calibr.slope.upr</span></span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a><span class="co">#&gt; 1        0.9902875</span></span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a><span class="fu">simple.calibration</span>(y_new, y.pred_main, <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a><span class="co">#&gt;   calibr.large calibr.large.lwr calibr.large.upr calibr.slope calibr.slope.lwr</span></span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a><span class="co">#&gt; 1     0.253726       0.09716647        0.4102683     1.003944        0.8670087</span></span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a><span class="co">#&gt;   calibr.slope.upr</span></span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a><span class="co">#&gt; 1          1.14981</span></span></code></pre></div>
+<p>Both models discriminate similarly in the new patients, and their
+AUCs are in line with the one estimated by the cross-validation.</p>
+<p>However, the calibration-in-the-large is now a bit positive: the
+models slightly underestimate the probability of relapse. This might be
+because fewer of our 100 patients relapsed compared to the new patients.
+This is one reason why models should be validated in independent
+samples, and why sharing your model is so useful (Radua &amp;
+Koutsouleris, 2024): others can test it, and recalibrate it if needed,
+in their own patients.</p>
+</div>
+<div id="estimating-the-probability-of-relapse-of-a-new-patient" class="section level3">
+<h3>Estimating the probability of relapse of a new patient</h3>
+<p>Finally, to estimate the probability of relapse of a single new
+patient, use <code>predict</code> with the data of this patient. For
+instance, for the first new patient:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>new_patient <span class="ot">=</span> x_new[<span class="dv">1</span>, , drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="fu">predict</span>(m_main, new_patient)</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="co">#&gt; [1] 0.9158238</span></span></code></pre></div>
+<p>The model estimates that this patient has a high probability of
+relapse. Note the <code>drop = FALSE</code>: <code>x_new[1, ]</code>
+would return a vector, whereas <code>predict</code> needs a matrix, even
+if it only has one row.</p>
+</div>
+</div>
+<div id="summary" class="section level2">
+<h2>Summary</h2>
+<ul>
+<li>Keep the probabilities (do not round them) to assess the model
+fully.</li>
+<li>The <strong>AUC</strong> measures discrimination without choosing a
+threshold.</li>
+<li>The <strong>calibration-in-the-large</strong> and the
+<strong>calibration slope</strong> (<code>simple.calibration</code>)
+measure whether the estimated probabilities are correct.</li>
+<li><code>glmnet_get.items.count</code> tells how stable the selection
+of each variable is, and <code>glmnet_get.items.relevance</code> how
+much each variable weighs.</li>
+<li>The model to use with future patients can be built with
+<code>fit_fun</code> using all the patients, or chosen among the
+cross-validation models with <code>glmnet_get.main.model</code>. Use
+<code>predict</code> to apply it to new patients.</li>
+</ul>
+<p>In the next tutorial, <a href="missing-data.html">Missing data</a>
+(<code>vignette(&quot;missing-data&quot;)</code>), you will learn what to do when
+some data are missing.</p>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p>Radua, J., Koutsouleris, N. (2024) Ten simple rules for using machine
+learning in mental health research. <em>Biological Psychiatry</em>, 96,
+511–513, doi: <a href="https://doi.org/10.1016/j.biopsych.2023.11.012">10.1016/j.biopsych.2023.11.012</a>.</p>
+<p>Radua, J., Rivas-Fernandez, M.A., Lindin, M., Diaz, F., Zurron, M.,
+Pereiro, A.X., Lojo-Seoane, C., De Prisco, M., Oliva, V., Vilajosana,
+E., Vieta, E., Galdo-Alvarez, S. Submitted</p>
+<p>Riley, R.D., Ensor, J., Snell, K.I.E., Harrell, F.E., Martin, G.P.,
+Reitsma, J.B., Moons, K.G.M., Collins, G., van Smeden, M. (2020)
+Calculating the sample size required for developing a clinical
+prediction model. <em>BMJ</em>, 368, m441, doi: <a href="https://doi.org/10.1136/bmj.m441">10.1136/bmj.m441</a>.</p>
+<p>Salazar de Pablo, G., Radua, J., Frearson, G., Young, A.H., Arango,
+C., Kelleher, I., Sharma, A., Uhlhaas, P.J., Solmi, M., Fusar-Poli, P.,
+Guinart, D., Correll, C.U. (2025) Development and validation of a
+prognostic model and risk calculator for the estimation of
+bipolar-spectrum disorder risk in hospitalised adolescents with
+non-psychotic/non-bipolar mental disorders. <em>Molecular
+Psychiatry</em>, 31, 1333–1342, doi: <a href="https://doi.org/10.1038/s41380-025-03244-1">10.1038/s41380-025-03244-1</a>.</p>
+<p>Solanes, A., Mezquida, G., Janssen, J., Amoretti, S., Lobo, A.,
+Gonzalez-Pinto, A., Arango, C., Vieta, E., Castro-Fornieles, J., Berge,
+D., Albacete, A., Gine, E., Parellada, M., Bernardo, M.; PEPs group
+(collaborators); Pomarol-Clotet, E., Radua, J. (2022) Combining MRI and
+clinical data to detect high relapse risk after the first episode of
+psychosis. <em>Schizophrenia</em>, 8, 100, doi: <a href="https://doi.org/10.1038/s41537-022-00309-w">10.1038/s41537-022-00309-w</a>.</p>
+<p>Sobregrau, P., Bailles, E., Radua, J., Carreno, M., Donaire, A.,
+Setoain, X., Bargallo, N., Rumia, J., Sanchez-Vives, M.V., Pintor, L.
+(2024) Design and validation of a diagnostic suspicion checklist to
+differentiate epileptic from psychogenic nonepileptic seizures
+(PNES-DSC). <em>Journal of Psychosomatic Research</em>, 180, 111656,
+doi: <a href="https://doi.org/10.1016/j.jpsychores.2024.111656">10.1016/j.jpsychores.2024.111656</a>.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

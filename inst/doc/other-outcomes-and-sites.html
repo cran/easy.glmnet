@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Continuous and survival outcomes, regression to the mean, and multisite data</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Continuous and survival outcomes,
+regression to the mean, and multisite data</h1>
+
+
+
+<p>In the previous tutorials, we predicted a binary outcome (relapse:
+yes or no) in patients from a single hospital. In this tutorial, you
+will learn to:</p>
+<ol style="list-style-type: decimal">
+<li>Predict a <strong>continuous</strong> outcome, such as the change in
+a symptom score.</li>
+<li>Avoid being fooled by <strong>regression to the mean</strong> when
+predicting change.</li>
+<li>Predict a <strong>survival</strong> outcome, i.e., the time until an
+event.</li>
+<li>Avoid being fooled by the <strong>effects of the site</strong> in
+multisite data.</li>
+</ol>
+<p>We assume that you have read the first two tutorials (<a href="easy.glmnet.html">Get started</a> and <a href="evaluating-and-interpreting.html">Evaluating and interpreting your
+model</a>). This tutorial takes about 30–40 minutes, and all the code
+runs in less than a minute.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(easy.glmnet)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>x <span class="ot">=</span> <span class="fu">as.matrix</span>(patients[, <span class="fu">paste0</span>(<span class="st">&quot;X&quot;</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">40</span>)])</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>x_new <span class="ot">=</span> <span class="fu">as.matrix</span>(new_patients[, <span class="fu">paste0</span>(<span class="st">&quot;X&quot;</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">40</span>)])</span></code></pre></div>
+<div id="part-1-continuous-outcomes-and-regression-to-the-mean" class="section level2">
+<h2>Part 1: Continuous outcomes and regression to the mean</h2>
+<div id="the-data" class="section level3">
+<h3>The data</h3>
+<p>Our patients completed a symptom scale twice: at baseline
+(<code>score_pre</code>) and at follow-up (<code>score_post</code>). We
+want to predict how much each patient’s symptoms will change:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>change <span class="ot">=</span> patients<span class="sc">$</span>score_post <span class="sc">-</span> patients<span class="sc">$</span>score_pre</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>change_new <span class="ot">=</span> new_patients<span class="sc">$</span>score_post <span class="sc">-</span> new_patients<span class="sc">$</span>score_pre</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">summary</span>(change)</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt;  -29.00  -11.25   -0.50   -1.10    6.25   27.00</span></span></code></pre></div>
+<p>Negative values mean improvement, and positive values mean
+worsening.</p>
+</div>
+<div id="predicting-the-change" class="section level3">
+<h3>Predicting the change</h3>
+<p>For a continuous outcome, use <code>family = &quot;gaussian&quot;</code>.
+Everything else is as in the previous tutorials:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>fit_fun <span class="ot">=</span> <span class="cf">function</span> (x_training, y_training) {</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="fu">glmnet_fit</span>(x_training, y_training, <span class="at">family =</span> <span class="st">&quot;gaussian&quot;</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>}</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>predict_fun <span class="ot">=</span> <span class="cf">function</span> (m, x_test) {</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  <span class="fu">predict</span>(m, x_test)</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>}</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>res_x <span class="ot">=</span> <span class="fu">cv</span>(x, change, <span class="at">family =</span> <span class="st">&quot;gaussian&quot;</span>, fit_fun, predict_fun, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>res_x</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt; 10-fold CV of 100 gaussian outcomes:</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt;     cor cor.lwr cor.upr mse.pred_div_mse.mean mse.mean mse.mean.lwr</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt; 1 0.285  0.0942   0.456                 0.943      158          122</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt;   mse.mean.upr mse.pred mse.pred.lwr mse.pred.upr calibr.large calibr.large.lwr</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; 1          195      149          108          191       -0.188            -2.62</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt;   calibr.large.upr calibr.slope calibr.slope.lwr calibr.slope.upr</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt; 1             2.25        0.648            0.212             1.08</span></span></code></pre></div>
+<p>For continuous outcomes, <code>res</code> shows:</p>
+<ul>
+<li><code>cor</code>: the correlation between the predicted and the
+actual values, from -1 to 1. The higher, the better; its square is
+roughly the proportion of the variance of the outcome that the model
+explains.</li>
+<li><code>mse.pred_div_mse.mean</code>: the mean squared error of the
+predictions divided by the mean squared error of simply predicting the
+mean for everyone. Values lower than 1 mean that the model predicts
+better than the mean (e.g., 0.8 means that the model reduces the error
+by 20%).</li>
+<li>The calibration-in-the-large (ideally 0) and the calibration slope
+(ideally 1), as explained in the second tutorial.</li>
+</ul>
+<p>A correlation of 0.29 seems promising. But before celebrating, we
+must check something.</p>
+</div>
+<div id="the-prophecy-the-sicker-shall-improve-the-healthier-shall-worsen" class="section level3">
+<h3>The prophecy: “the sicker shall improve, the healthier shall
+worsen”</h3>
+<p>Let’s build a model with only one predictor, the baseline score:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>x_pre <span class="ot">=</span> <span class="fu">cbind</span>(<span class="at">score_pre =</span> patients<span class="sc">$</span>score_pre)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>x_pre_new <span class="ot">=</span> <span class="fu">cbind</span>(<span class="at">score_pre =</span> new_patients<span class="sc">$</span>score_pre)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>res_pre <span class="ot">=</span> <span class="fu">cv</span>(x_pre, change, <span class="at">family =</span> <span class="st">&quot;gaussian&quot;</span>, fit_fun, predict_fun, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>res_pre</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; 10-fold CV of 100 gaussian outcomes:</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt;     cor cor.lwr cor.upr mse.pred_div_mse.mean mse.mean mse.mean.lwr</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; 1 0.561    0.41   0.683                 0.685      158          122</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt;   mse.mean.upr mse.pred mse.pred.lwr mse.pred.upr calibr.large calibr.large.lwr</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; 1          195      108         77.3          140     -0.00573            -2.08</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt;   calibr.large.upr calibr.slope calibr.slope.lwr calibr.slope.upr</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; 1             2.07        0.976            0.688             1.26</span></span></code></pre></div>
+<p>The baseline score alone predicts the change even better, with a
+correlation of 0.56. The model simply predicts that the patients with
+high baseline scores will improve, and those with low baseline scores
+will worsen:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">plot</span>(patients<span class="sc">$</span>score_pre, change, <span class="at">xlab =</span> <span class="st">&quot;Baseline score&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Change&quot;</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">abline</span>(<span class="fu">lm</span>(change <span class="sc">~</span> patients<span class="sc">$</span>score_pre))</span></code></pre></div>
+<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAYAAAAGACAIAAAArpSLoAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAgAElEQVR4nOyddyDV+//Hz7GOvbfMY8uuZGRFklWiUhGFNJWGNtEt3QbampeGhhQViYpQycrOpuy9OY5zzu+Pz/2e37nH6JifI+/HXz6vz3u8jpxX7/l6IgkEAgIAAADggAZuBwAAwNwFBCAAAAAbIAABAADYAAEIAADABghAAAAANkAAAgAAsAECEAAAgA0QgAAAAGyAAAQAAGADBCAAAAAbIAABAADYAAEIAADABghAAAAANkAAAgAAsAECEAAAgA0QgAAAAGyAAAQAAGADBCAAAAAbIAABAADYAAEIAADABghAAAAANkAAAgAAsAECEAAAgA0QgAAAAGyAAAQAAGADBCAAAAAbIAABAADYAAEIAADABghAAAAANkAAAgAAsAECEAAAgA0QgAAAAGyAAAQAAGADBCAAAAAbIAABAADYAAEIAADABghAAAAANkAAAgAAsAECEAAAgA0QgAAAAGyAAAQAAGADBCAAAAAbIAABAADYAAEIAADABghAAAAANkAAAgAAsAECEAAAgA0QgAAAAGyAAAQAAGADBCAAAAAbIAABAADYAAEIAADABghAAAAANkAAAgAAsAECEAAAgA0QgAAAAGyAAAQAAGADBCAAAAAbIAABAADYAAEIAADABghAAAAANkAAAgAAsAECEAAAgA0QgAAAAGyAAAQAAGADBCAAAAAbIAABAADYAAEIAADABghAAAAANkAAAgAAsAECEAAAgA0QgAAAAGyAAAQAAGADBCAAAAAbIAABAADYAAEIAADABghAAAAANujgdmDm2LdvX1JSEtxeAABUBxMTU0REhICAwMx3PYcC0OfPn3fu3KmsrAy3IwAAdeHg4NDY2AgC0LQjLy+vqakJtxcAAHXBxMQEV9dgDQgAAMDG3BoBzWWio6Pj4uK6urpUVVXd3Nw4ODjg9ggAACOgOQAGg7GysvLz81NSUjIzMysuLlZUVExPT4fbLwAAjIDmAEFBQTQ0NN++faOhoUEgEBs3boyKitq4cWNRURFkAQDgAvz9/flEREQcPHiQNNbY2NjQ09PHxMR8/vy5ra0NRt8AcxwQgP58WlpaRERESC2fP3+urq52d3c/cOCAtLS0m5tbR0cHXO4B5jIg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" /><!-- --></p>
+<p>Is the baseline score really telling us something about the patients’
+future? No. The scores at baseline and at follow-up are only weakly
+correlated (<code>cor(patients$score_pre, patients$score_post)</code> =
+0.25 in our data), so a patient with a very high baseline score will
+probably have a less extreme score at follow-up, simply because extreme
+scores are rare. For instance, a patient who scored very high at
+baseline may have been having a bad week, and at follow-up, that bad
+week is likely over. The opposite happens with the patients who scored
+very low at baseline. This statistical phenomenon is called
+<strong>regression to the mean</strong>, and it makes the change look
+predictable even when nothing that we measured can tell us how a patient
+will evolve (Radua et al., 2026).</p>
+</div>
+<div id="why-did-the-predictors-seem-to-predict-the-change" class="section level3">
+<h3>Why did the predictors seem to predict the change?</h3>
+<p>In our data, the predictors are strongly associated with the baseline
+score. Thus, the model with the predictors could estimate the baseline
+score of each patient and, from it, “predict” the change exactly as the
+baseline-only model did. Indeed, its predictions are strongly correlated
+with the baseline score:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">cor</span>(res_x<span class="sc">$</span>predictions<span class="sc">$</span>y.pred, patients<span class="sc">$</span>score_pre)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt; [1] -0.6980462</span></span></code></pre></div>
+<p>So, the predictors seemed to predict the change, but only because of
+regression to the mean.</p>
+</div>
+<div id="does-the-model-add-anything-beyond-regression-to-the-mean" class="section level3">
+<h3>Does the model add anything beyond regression to the mean?</h3>
+<p>Because of regression to the mean, a model predicting change is only
+interesting if it predicts better than the baseline score alone. Thus,
+we must build a full model, including the predictors and the baseline
+score, and compare it with the baseline-only model:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>x_full <span class="ot">=</span> <span class="fu">cbind</span>(x, <span class="at">score_pre =</span> patients<span class="sc">$</span>score_pre)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>x_full_new <span class="ot">=</span> <span class="fu">cbind</span>(x_new, <span class="at">score_pre =</span> new_patients<span class="sc">$</span>score_pre)</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>res_full <span class="ot">=</span> <span class="fu">cv</span>(x_full, change, <span class="at">family =</span> <span class="st">&quot;gaussian&quot;</span>, fit_fun, predict_fun, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="fu">simple.accuracy.test</span>(change, res_full<span class="sc">$</span>predictions<span class="sc">$</span>y.pred, res_pre<span class="sc">$</span>predictions<span class="sc">$</span>y.pred,</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>                     <span class="st">&quot;cor&quot;</span>, <span class="at">alternative =</span> <span class="st">&quot;greater&quot;</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt;        cor1      cor2   p.value                           test.method</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt; 1 0.4891928 0.5613898 0.9899259 cocor.dep.groups.overlap/williams1959</span></span></code></pre></div>
+<p><code>simple.accuracy.test</code> compares the accuracy of two sets
+of predictions of the same patients. Here, it tests whether the
+correlation of the full model (the first set of predictions) is greater
+than that of the baseline-only model (the second set). It is not: the
+predictors add nothing beyond regression to the mean.</p>
+<p>Let’s check it with the crystal ball, building the models with our
+100 patients and applying them to the new patients:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>m_pre <span class="ot">=</span> <span class="fu">fit_fun</span>(x_pre, change)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>m_full <span class="ot">=</span> <span class="fu">fit_fun</span>(x_full, change)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">c</span>(<span class="at">baseline_only =</span> <span class="fu">cor</span>(<span class="fu">predict</span>(m_pre, x_pre_new), change_new),</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">full =</span> <span class="fu">cor</span>(<span class="fu">predict</span>(m_full, x_full_new), change_new))</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt; baseline_only          full </span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt;     0.6105832     0.5860801</span></span></code></pre></div>
+<p>In the new patients, the full model does not predict the change
+better than the baseline-only model either.</p>
+<blockquote>
+<p><strong>Lesson 3: When predicting change, always compare your model
+with a model that uses only the baseline score.</strong> Otherwise, you
+may be reporting regression to the mean as if it was a prediction, even
+if your model does not include the baseline score.</p>
+</blockquote>
+<p>Note that our example is extreme on purpose: in real data, the scores
+at baseline and at follow-up are usually more correlated, and thus
+regression to the mean is smaller. But even with moderate correlations,
+it can explain a large part of the apparent accuracy of a model
+predicting change (Radua et al., 2026).</p>
+</div>
+</div>
+<div id="part-2-survival-outcomes" class="section level2">
+<h2>Part 2: Survival outcomes</h2>
+<div id="the-data-1" class="section level3">
+<h3>The data</h3>
+<p>Sometimes we want to predict not only whether an event happens, but
+when. The column <code>surv</code> contains the number of years until
+relapse or last follower up, and whether the patient relapsed (1) or was
+followed without relapse until that time (0, “censored”, i.e., we only
+know that the patient did not relapse before that time). R stores this
+kind of data as a <code>Surv</code> object (from the package
+<code>survival</code>). Censors are marked with <code>+</code> when
+printing this object; for example, <code>1+</code> represents a patient
+followed for one year without relapse, whereas <code>2</code> represents
+a patient who relapsed at two years.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>y_surv <span class="ot">=</span> patients<span class="sc">$</span>surv</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>y_surv_new <span class="ot">=</span> new_patients<span class="sc">$</span>surv</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="fu">head</span>(y_surv)</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; [1] 1+ 2  1  2  3  1</span></span></code></pre></div>
+</div>
+<div id="predicting-survival" class="section level3">
+<h3>Predicting survival</h3>
+<p>For survival outcomes, use <code>family = &quot;cox&quot;</code>, which fits a
+lasso Cox model (Solanes et al., 2022; Palau et al., 2022):</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>fit_fun <span class="ot">=</span> <span class="cf">function</span> (x_training, y_training) {</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="fu">glmnet_fit</span>(x_training, y_training, <span class="at">family =</span> <span class="st">&quot;cox&quot;</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>}</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>predict_fun <span class="ot">=</span> <span class="cf">function</span> (m, x_test) {</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  <span class="fu">predict</span>(m, x_test)</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>}</span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>res_surv <span class="ot">=</span> <span class="fu">cv</span>(x, y_surv, <span class="at">family =</span> <span class="st">&quot;cox&quot;</span>, fit_fun, predict_fun, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; Warning in glmnet_fit(x_training, y_training, family = &quot;cox&quot;): In easy.glmnet</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; 1.2, an artificial intercept is used for &quot;cox&quot; to keep the mean of linear</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; predictors constant across folds. Use cox.a0 = FALSE to reproduce the results</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; of previous versions. This warning is shown once per session.</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a>res_surv</span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt; 10-fold CV of 100 cox outcomes:</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt;     hr hr.lwr hr.upr hr.per.sd hr.per.sd.lwr hr.per.sd.upr calibr.slope</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co">#&gt; 1 2.29   1.34   3.91      1.51          1.16          1.96        0.829</span></span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co">#&gt;   calibr.slope.lwr calibr.slope.upr</span></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="co">#&gt; 1            0.295             1.36</span></span></code></pre></div>
+<p>(If you see a warning about <code>cox.a0</code>, it only informs
+users of previous versions of the package that, for Cox models,
+<code>glmnet_fit</code> now adds an artificial intercept so that the
+risk scores of the different folds are on the same scale; you can ignore
+it.)</p>
+<p>For Cox models, <code>predict</code> does not return a probability
+but a <strong>risk score</strong> (the “linear predictor”): the higher,
+the sooner the patient is expected to relapse. <code>res_surv</code>
+shows:</p>
+<ul>
+<li><code>hr</code>: the hazard ratio associated with one unit of the
+risk score.</li>
+<li><code>hr.per.sd</code>: the hazard ratio associated with one
+standard deviation of the risk score. Unlike <code>hr</code>, it does
+not depend on the scale of the risk score, so it is the one to use to
+compare models. For instance, a value of 2 means that the hazard of
+relapse doubles with each standard deviation of the risk score.</li>
+<li>The calibration slope (ideally 1).</li>
+</ul>
+</div>
+<div id="discrimination-at-different-times" class="section level3">
+<h3>Discrimination at different times</h3>
+<p>We may also want to know how well the model discriminates the
+patients who relapse before a given time from those who do not.
+<code>surv2binary</code> converts the survival outcome into a binary
+outcome at each time:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>y_binary <span class="ot">=</span> <span class="fu">surv2binary</span>(y_surv)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>y_binary[[<span class="dv">1</span>]]<span class="sc">$</span>time</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="fu">head</span>(y_binary[[<span class="dv">1</span>]]<span class="sc">$</span>status)</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt; [1] 0 0 1 0 0 1</span></span></code></pre></div>
+<p>Then we can estimate the AUC at each time. Note that, at a given
+time, the status of the patients censored before that time is unknown
+(<code>NA</code>), so we must exclude them:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>) {</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  status <span class="ot">=</span> y_binary[[i]]<span class="sc">$</span>status</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  known <span class="ot">=</span> <span class="fu">which</span>(<span class="sc">!</span><span class="fu">is.na</span>(status))</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  auc <span class="ot">=</span> <span class="fu">simple.accuracy</span>(status[known], res_surv<span class="sc">$</span>predictions<span class="sc">$</span>y.pred[known], <span class="st">&quot;auc&quot;</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">&quot;Year&quot;</span>, y_binary[[i]]<span class="sc">$</span>time, <span class="st">&quot;: AUC =&quot;</span>, <span class="fu">round</span>(auc<span class="sc">$</span>auc, <span class="dv">2</span>),</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>      <span class="st">&quot;in&quot;</span>, <span class="fu">length</span>(known), <span class="st">&quot;patients</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>}</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co">#&gt; Year 1 : AUC = 0.72 in 100 patients</span></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt; Year 2 : AUC = 0.65 in 84 patients</span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co">#&gt; Year 3 : AUC = 0.63 in 65 patients</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="co">#&gt; Year 4 : AUC = 0.5 in 57 patients</span></span></code></pre></div>
+<p>The AUC decreases with time because, in our data, the relapses after
+the first year are unrelated to the predictors (we know it because we
+simulated the data this way).</p>
+</div>
+</div>
+<div id="part-3-multisite-data" class="section level2">
+<h2>Part 3: Multisite data</h2>
+<div id="the-data-2" class="section level3">
+<h3>The data</h3>
+<p>In this part, we want to predict whether each patient will need
+surgery (<code>needs_surgery</code>: 1 = yes, 0 = no). Our 100 patients
+come from four hospitals, which have very different proportions of
+patients requiring surgery:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>site <span class="ot">=</span> patients<span class="sc">$</span>site</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="fu">table</span>(site, patients<span class="sc">$</span>needs_surgery)</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt;             </span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co">#&gt; site          0  1</span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt;   Hospital A  3 22</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">#&gt;   Hospital B  7 13</span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt;   Hospital C 15  9</span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="co">#&gt;   Hospital D 24  7</span></span></code></pre></div>
+<p>In addition, our patients have three laboratory measures
+(<code>L1</code>, <code>L2</code>, and <code>L3</code>). These measures
+are not related to the need of surgery, but each hospital’s laboratory
+is calibrated slightly differently, so their values differ between
+hospitals:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">tapply</span>(patients<span class="sc">$</span>L1, site, mean), <span class="dv">1</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="co">#&gt; Hospital A Hospital B Hospital C Hospital D </span></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co">#&gt;       33.0       27.8       22.4       18.7</span></span></code></pre></div>
+</div>
+<div id="the-effects-of-the-site" class="section level3">
+<h3>The effects of the site</h3>
+<p>Let’s see if the laboratory measures predict the need of surgery:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>x_lab <span class="ot">=</span> <span class="fu">as.matrix</span>(patients[, <span class="fu">c</span>(<span class="st">&quot;L1&quot;</span>, <span class="st">&quot;L2&quot;</span>, <span class="st">&quot;L3&quot;</span>)])</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>x_lab_new <span class="ot">=</span> <span class="fu">as.matrix</span>(new_patients[, <span class="fu">c</span>(<span class="st">&quot;L1&quot;</span>, <span class="st">&quot;L2&quot;</span>, <span class="st">&quot;L3&quot;</span>)])</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>y <span class="ot">=</span> patients<span class="sc">$</span>needs_surgery</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>y_new <span class="ot">=</span> new_patients<span class="sc">$</span>needs_surgery</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a></span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>fit_fun <span class="ot">=</span> <span class="cf">function</span> (x_training, y_training, ...) {</span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>  <span class="fu">glmnet_fit</span>(x_training, y_training, <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>}</span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a>predict_fun <span class="ot">=</span> <span class="cf">function</span> (m, x_test, ...) {</span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a>  <span class="fu">predict</span>(m, x_test)</span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a>}</span>
+<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a>res_lab <span class="ot">=</span> <span class="fu">cv</span>(x_lab, y, <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>, fit_fun, predict_fun, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a>res_lab</span>
+<span id="cb15-15"><a href="#cb15-15" tabindex="-1"></a><span class="co">#&gt; 10-fold CV of 100 binomial outcomes:</span></span>
+<span id="cb15-16"><a href="#cb15-16" tabindex="-1"></a><span class="co">#&gt;     auc auc.lwr auc.upr calibr.large calibr.large.lwr calibr.large.upr</span></span>
+<span id="cb15-17"><a href="#cb15-17" tabindex="-1"></a><span class="co">#&gt; 1 0.796   0.708   0.884     -0.00359           -0.455            0.448</span></span>
+<span id="cb15-18"><a href="#cb15-18" tabindex="-1"></a><span class="co">#&gt;   calibr.slope calibr.slope.lwr calibr.slope.upr</span></span>
+<span id="cb15-19"><a href="#cb15-19" tabindex="-1"></a><span class="co">#&gt; 1        0.961            0.551             1.44</span></span></code></pre></div>
+<p>An AUC of 0.8! Did we discover a new biomarker? (We hid the warning
+about <code>type.measure</code>, which you can ignore as explained in
+the first tutorial.) Let’s apply the model to the new patients, who come
+from a fifth hospital:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>m_lab <span class="ot">=</span> <span class="fu">fit_fun</span>(x_lab, y)</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>y_new.pred <span class="ot">=</span> <span class="fu">predict</span>(m_lab, x_lab_new)</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="fu">simple.accuracy</span>(y_new, y_new.pred, <span class="st">&quot;auc&quot;</span>)</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="co">#&gt;         auc  auc.lwr   auc.upr</span></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="co">#&gt; 1 0.5435303 0.505887 0.5811737</span></span></code></pre></div>
+<p>The model does not work in the new hospital. What happened is that
+the model learned to recognize the <strong>hospital</strong> from the
+laboratory measures, and the hospitals differ in their proportion of
+patients requiring surgery. Thus, it predicted a high risk for the
+patients who seemed to come from the hospital with most surgeries, and a
+low risk for those who seemed to come from the hospital with fewest.
+This does not work in another hospital (Radua &amp; Koutsouleris, 2024,
+rule 5).</p>
+</div>
+<div id="considering-the-site" class="section level3">
+<h3>Considering the site</h3>
+<p>To detect this problem, give the sites to <code>cv</code> with the
+argument <code>site</code>:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>res_lab <span class="ot">=</span> <span class="fu">cv</span>(x_lab, y, <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>, fit_fun, predict_fun, <span class="at">site =</span> site,</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>             <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>res_lab</span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a><span class="co">#&gt; 10-fold CV of 100 binomial multisite outcomes:</span></span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a><span class="co">#&gt;     auc site.method      auc.method</span></span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a><span class="co">#&gt; 1 0.556       covar adapted AROC.sp</span></span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a><span class="co">#&gt; Note: &#39;multisite.accuracy&#39; called with default parameters. Use &#39;multisite.accuracy&#39; directly to use different parameters.</span></span></code></pre></div>
+<p>When you give the sites:</p>
+<ul>
+<li><code>cv</code> assigns the patients to the folds separately for
+each site, so that all folds have patients from all sites.</li>
+<li><code>cv</code> gives the site of the training and test patients to
+<code>fit_fun</code> and <code>predict_fun</code>, respectively. Our
+functions ignore them (this is why we added <code>...</code> to their
+arguments), but you could use them, e.g., to remove the differences
+between sites in the laboratory measures. Following Lesson 2, these
+differences must then be estimated using only the training
+patients.</li>
+<li><code>res</code> estimates the accuracy with the function
+<code>multisite.accuracy</code> of the package
+<code>multisite.accuracy</code>, which controls for the effects of the
+site (Solanes et al., 2021). Here, the AUC drops to around 0.5 or lower,
+i.e., the laboratory measures do not predict the need of surgery within
+each hospital.</li>
+</ul>
+</div>
+<div id="removing-the-differences-between-sites" class="section level3">
+<h3>Removing the differences between sites</h3>
+<p>In multisite studies, it is also convenient to try to remove the
+differences between sites in the predictors, e.g., with the ComBat
+method of the package <code>combat.enigma</code> (Radua et al., 2020).
+Following Lesson 2, the differences between sites must be estimated in
+the training set (<code>combat_fit</code>) and then removed from both
+the training and the test sets (<code>combat_apply</code>). This is
+precisely what the sites given to <code>fit_fun</code> and
+<code>predict_fun</code> are for:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="fu">library</span>(combat.enigma)</span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>fit_fun <span class="ot">=</span> <span class="cf">function</span> (x_training, y_training, site_training) {</span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>  combat <span class="ot">=</span> <span class="fu">combat_fit</span>(x_training, site_training, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a>  x_training <span class="ot">=</span> <span class="fu">combat_apply</span>(combat, x_training, site_training, <span class="at">verbose =</span> <span class="cn">FALSE</span>)<span class="sc">$</span>dat.combat</span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a>  <span class="fu">list</span>(</span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a>    <span class="at">combat =</span> combat,</span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a>    <span class="at">lasso =</span> <span class="fu">glmnet_fit</span>(x_training, y_training, <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a>  )</span>
+<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a>}</span>
+<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a>predict_fun <span class="ot">=</span> <span class="cf">function</span> (m, x_test, site_test) {</span>
+<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a>  x_test <span class="ot">=</span> <span class="fu">combat_apply</span>(m<span class="sc">$</span>combat, x_test, site_test, <span class="at">verbose =</span> <span class="cn">FALSE</span>)<span class="sc">$</span>dat.combat</span>
+<span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a>  <span class="fu">predict</span>(m<span class="sc">$</span>lasso, x_test)</span>
+<span id="cb18-13"><a href="#cb18-13" tabindex="-1"></a>}</span>
+<span id="cb18-14"><a href="#cb18-14" tabindex="-1"></a>res <span class="ot">=</span> <span class="fu">cv</span>(x_lab, y, <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>, fit_fun, predict_fun, <span class="at">site =</span> site,</span>
+<span id="cb18-15"><a href="#cb18-15" tabindex="-1"></a>         <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb18-16"><a href="#cb18-16" tabindex="-1"></a>res</span></code></pre></div>
+<p>Fortunately, a benchmark study found that ComBat is enough to remove
+the effects of the site for lasso models, but not for other techniques
+such as random forests, support vector machines, or Gaussian processes
+(Solanes et al., 2023; see also the MAREoS benchmark at <a href="https://www.imardgroup.com/mareos-benchmark/benchmark.html" class="uri">https://www.imardgroup.com/mareos-benchmark/benchmark.html</a>).
+Note, however, that ComBat cannot be applied to patients from a site
+that was not in the training set unless we have some data from that site
+to estimate its differences.</p>
+<p>Of course, the best test of a model is to apply it to patients from
+other sites, as we did with the crystal ball.</p>
+</div>
+</div>
+<div id="summary" class="section level2">
+<h2>Summary</h2>
+<ul>
+<li>Use <code>family = &quot;gaussian&quot;</code> for continuous outcomes, and
+<code>family = &quot;cox&quot;</code> for survival outcomes.</li>
+<li>When predicting change, compare your model with a baseline-only
+model with <code>simple.accuracy.test</code>, to rule out that it only
+captures regression to the mean (<strong>Lesson 3</strong>).</li>
+<li>For Cox models, use the hazard ratio per standard deviation to
+compare models, and <code>surv2binary</code> to estimate the AUC at
+different times.</li>
+<li>In multisite data, give the sites to <code>cv</code>, so that the
+accuracy is estimated controlling for the effects of the site, consider
+removing the differences between sites within <code>fit_fun</code>
+(e.g., with ComBat), and validate your model in other sites whenever
+possible.</li>
+</ul>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p>Palau, P., Solanes, A., Madre, M., Saez-Francas, N., Sarro, S., Moro,
+N., Verdolini, N., Sanchez, M., Alonso-Lana, S., Amann, B.L., Romaguera,
+A., Martin-Subero, M., Fortea, L., Fuentes-Claramonte, P., Garcia-Leon,
+M.A., Munuera, J., Canales-Rodriguez, E.J., Fernandez-Corcuera, P.,
+Brambilla, P., Vieta, E., Pomarol-Clotet, E., Radua, J. (2023) Improved
+estimation of the risk of manic relapse by combining clinical and brain
+scan data. <em>Spanish Journal of Psychiatry and Mental Health</em>, 16,
+235–243, doi: <a href="https://doi.org/10.1016/j.rpsm.2023.01.001">10.1016/j.rpsm.2023.01.001</a>.</p>
+<p>Radua, J., Koutsouleris, N. (2024) Ten simple rules for using machine
+learning in mental health research. <em>Biological Psychiatry</em>, 96,
+511–513, doi: <a href="https://doi.org/10.1016/j.biopsych.2023.11.012">10.1016/j.biopsych.2023.11.012</a>.</p>
+<p>Radua, J., Oliva, V., Vieta, E., De Prisco, M. (2026) Regression to
+the mean inflates accuracy in machine learning prediction of symptom
+change. <em>Nature Mental Health</em>, doi: <a href="https://doi.org/10.1038/s44220-026-00686-6">10.1038/s44220-026-00686-6</a>.</p>
+<p>Radua, J., Vieta, E., Shinohara, R., Kochunov, P., Quide, Y., Green,
+M.J., et al. (2020) Increased power by harmonizing structural MRI site
+differences with the ComBat batch adjustment method in ENIGMA.
+<em>NeuroImage</em>, 218, 116956, doi: <a href="https://doi.org/10.1016/j.neuroimage.2020.116956">10.1016/j.neuroimage.2020.116956</a>.</p>
+<p>Solanes, A., Gosling, C.J., Fortea, L., Ortuno, M., Lopez-Soley, E.,
+Llufriu, S., et al. (2023) Removing the effects of the site in brain
+imaging machine-learning - Measurement and extendable benchmark.
+<em>NeuroImage</em>, 265, 119800, doi: <a href="https://doi.org/10.1016/j.neuroimage.2022.119800">10.1016/j.neuroimage.2022.119800</a>.</p>
+<p>Solanes, A., Mezquida, G., Janssen, J., Amoretti, S., Lobo, A.,
+Gonzalez-Pinto, A., Arango, C., Vieta, E., Castro-Fornieles, J., Berge,
+D., Albacete, A., Gine, E., Parellada, M., Bernardo, M.; PEPs group
+(collaborators); Pomarol-Clotet, E., Radua, J. (2022) Combining MRI and
+clinical data to detect high relapse risk after the first episode of
+psychosis. <em>Schizophrenia</em>, 8, 100, doi: <a href="https://doi.org/10.1038/s41537-022-00309-w">10.1038/s41537-022-00309-w</a>.</p>
+<p>Solanes, A., Palau, P., Fortea, L., Salvador, R., Gonzalez-Navarro,
+L., Llach, C.D., Valenti, M., Vieta, E., Radua, J. (2021) Biased
+accuracy in multisite machine-learning studies due to incomplete removal
+of the effects of the site. <em>Psychiatry Research: Neuroimaging</em>,
+314, 111313, doi: <a href="https://doi.org/10.1016/j.pscychresns.2021.111313">10.1016/j.pscychresns.2021.111313</a>.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

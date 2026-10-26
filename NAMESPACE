@@ -1,12 +1,24 @@
 export(assign.folds, coef.glmnet_fit, cv, data.frame2glmnet.matrix,
-       data.frame2glmnet.matrix_fit, glmnet_fit, glmnet_get.items.relevance,
-       glmnet_get.main.model, glmnet_predict, impute.glmnet.matrix,
-       impute.glmnet.matrix_fit, predict.glmnet_fit, surv2binary)
+       data.frame2glmnet.matrix_fit, glmnet_fit, glmnet_get.items.count,
+       glmnet_get.items.relevance, glmnet_get.main.model, glmnet_predict,
+       impute.glmnet.matrix, impute.glmnet.matrix_fit, predict.glmnet_fit,
+       print.cv, print.glmnet_fit, simple.accuracy, simple.accuracy.test,
+       simple.calibration, surv2binary)
 
+importFrom("cocor", "cocor.dep.groups.overlap")
 importFrom("doParallel", "registerDoParallel")
-importFrom("foreach", "%dopar%", "foreach")
+importFrom("foreach", "%dopar%", "foreach", "registerDoSEQ")
 importFrom("glmnet", "cv.glmnet", "glmnet", "glmnet.control")
+importFrom("multisite.accuracy", "multisite.accuracy")
 importFrom("parallel", "makeCluster", "stopCluster")
-importFrom("stats", "binomial", "glm", "lm", "rnorm", "runif", "sd", "var")
+importFrom("pROC", "ci.auc", "roc", "roc.test")
+importFrom("stats", "binom.test", "binomial", "coef", "confint", "convolve",
+           "cor", "cor.test", "dbinom", "glm", "lm", "pbeta", "pbinom",
+           "plogis", "qbeta", "qlogis", "rnorm", "runif", "t.test", "sd", "var")
 importFrom("survival", "coxph")
 importFrom("utils", "setTxtProgressBar", "txtProgressBar")
+
+S3method(print, cv)
+S3method(coef, glmnet_fit)
+S3method(predict, glmnet_fit)
+S3method(print, glmnet_fit)

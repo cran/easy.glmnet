@@ -1,0 +1,444 @@
+---
+title: "Continuous and survival outcomes, regression to the mean, and multisite data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Continuous and survival outcomes, regression to the mean, and multisite data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+In the previous tutorials, we predicted a binary outcome (relapse: yes or no)
+in patients from a single hospital. In this tutorial, you will learn to:
+
+1. Predict a **continuous** outcome, such as the change in a symptom score.
+2. Avoid being fooled by **regression to the mean** when predicting change.
+3. Predict a **survival** outcome, i.e., the time until an event.
+4. Avoid being fooled by the **effects of the site** in multisite data.
+
+We assume that you have read the first two tutorials ([Get started](easy.glmnet.html) and [Evaluating and interpreting your model](evaluating-and-interpreting.html)). This tutorial takes about 30–40 minutes, and all the code runs in less than
+a minute.
+
+```{r}
+library(easy.glmnet)
+x = as.matrix(patients[, paste0("X", 1:40)])
+x_new = as.matrix(new_patients[, paste0("X", 1:40)])
+```
+
+
+## Part 1: Continuous outcomes and regression to the mean
+
+### The data
+
+Our patients completed a symptom scale twice: at baseline (`score_pre`) and at
+follow-up (`score_post`). We want to predict how much each patient's symptoms
+will change:
+
+```{r}
+change = patients$score_post - patients$score_pre
+change_new = new_patients$score_post - new_patients$score_pre
+summary(change)
+```
+
+Negative values mean improvement, and positive values mean worsening.
+
+### Predicting the change
+
+For a continuous outcome, use `family = "gaussian"`. Everything else is as in
+the previous tutorials:
+
+```{r}
+set.seed(1)
+fit_fun = function (x_training, y_training) {
+  glmnet_fit(x_training, y_training, family = "gaussian")
+}
+predict_fun = function (m, x_test) {
+  predict(m, x_test)
+}
+res_x = cv(x, change, family = "gaussian", fit_fun, predict_fun, verbose = FALSE)
+res_x
+```
+
+For continuous outcomes, `res` shows:
+
+- `cor`: the correlation between the predicted and the actual values, from -1
+  to 1. The higher, the better; its square is roughly the proportion of the
+  variance of the outcome that the model explains.
+- `mse.pred_div_mse.mean`: the mean squared error of the predictions divided
+  by the mean squared error of simply predicting the mean for everyone. Values
+  lower than 1 mean that the model predicts better than the mean (e.g., 0.8
+  means that the model reduces the error by 20%).
+- The calibration-in-the-large (ideally 0) and the calibration slope (ideally
+  1), as explained in the second tutorial.
+
+A correlation of `r round(cor(res_x$predictions$y.pred, change), 2)` seems
+promising. But before celebrating, we must check something.
+
+### The prophecy: "the sicker shall improve, the healthier shall worsen"
+
+Let's build a model with only one predictor, the baseline score:
+
+```{r}
+x_pre = cbind(score_pre = patients$score_pre)
+x_pre_new = cbind(score_pre = new_patients$score_pre)
+res_pre = cv(x_pre, change, family = "gaussian", fit_fun, predict_fun, verbose = FALSE)
+res_pre
+```
+
+The baseline score alone predicts the change even better, with a correlation
+of `r round(cor(res_pre$predictions$y.pred, change), 2)`. The model simply
+predicts that the patients with high baseline scores will improve, and those
+with low baseline scores will worsen:
+
+```{r, fig.width = 4, fig.height = 4}
+plot(patients$score_pre, change, xlab = "Baseline score", ylab = "Change")
+abline(lm(change ~ patients$score_pre))
+```
+
+Is the baseline score really telling us something about the patients' future?
+No. The scores at baseline and at follow-up are only weakly correlated
+(`cor(patients$score_pre, patients$score_post)` =
+`r round(cor(patients$score_pre, patients$score_post), 2)` in our data), so a
+patient with a very high baseline score will probably have a less extreme
+score at follow-up, simply because extreme scores are rare. For instance, a
+patient who scored very high at baseline may have been having a bad week, and
+at follow-up, that bad week is likely over. The opposite happens with the
+patients who scored very low at baseline. This statistical phenomenon is
+called **regression to the mean**, and it makes the change look predictable
+even when nothing that we measured can tell us how a patient will evolve
+(Radua et al., 2026).
+
+### Why did the predictors seem to predict the change?
+
+In our data, the predictors are strongly associated with the baseline score.
+Thus, the model with the predictors could estimate the baseline score of each
+patient and, from it, "predict" the change exactly as the baseline-only model
+did. Indeed, its predictions are strongly correlated with the baseline score:
+
+```{r}
+cor(res_x$predictions$y.pred, patients$score_pre)
+```
+
+So, the predictors seemed to predict the change, but only because of regression
+to the mean.
+
+### Does the model add anything beyond regression to the mean?
+
+Because of regression to the mean, a model predicting change is only
+interesting if it predicts better than the baseline score alone. Thus, we must
+build a full model, including the predictors and the baseline score, and compare
+it with the baseline-only model:
+
+```{r}
+x_full = cbind(x, score_pre = patients$score_pre)
+x_full_new = cbind(x_new, score_pre = new_patients$score_pre)
+res_full = cv(x_full, change, family = "gaussian", fit_fun, predict_fun, verbose = FALSE)
+simple.accuracy.test(change, res_full$predictions$y.pred, res_pre$predictions$y.pred,
+                     "cor", alternative = "greater")
+```
+
+`simple.accuracy.test` compares the accuracy of two sets of predictions of the
+same patients. Here, it tests whether the correlation of the full model (the
+first set of predictions) is greater than that of the baseline-only model (the
+second set). It is not: the predictors add nothing beyond regression to the
+mean.
+
+Let's check it with the crystal ball, building the models with our 100
+patients and applying them to the new patients:
+
+```{r}
+m_pre = fit_fun(x_pre, change)
+m_full = fit_fun(x_full, change)
+c(baseline_only = cor(predict(m_pre, x_pre_new), change_new),
+  full = cor(predict(m_full, x_full_new), change_new))
+```
+
+In the new patients, the full model does not predict the change better than
+the baseline-only model either.
+
+> **Lesson 3: When predicting change, always compare your model with a model
+> that uses only the baseline score.** Otherwise, you may be reporting
+> regression to the mean as if it was a prediction, even if your model does
+> not include the baseline score.
+
+Note that our example is extreme on purpose: in real data, the scores at
+baseline and at follow-up are usually more correlated, and thus regression to
+the mean is smaller. But even with moderate correlations, it can explain a
+large part of the apparent accuracy of a model predicting change (Radua et
+al., 2026).
+
+
+## Part 2: Survival outcomes
+
+### The data
+
+Sometimes we want to predict not only whether an event happens, but when. The
+column `surv` contains the number of years until relapse or last follower up,
+and whether the patient relapsed (1) or was followed without relapse until that
+time (0, "censored", i.e., we only know that the patient did not relapse before
+that time). R stores this kind of data as a `Surv` object (from the package
+`survival`). Censors are marked with `+` when printing this object; for example,
+`1+` represents a patient followed for one year without relapse, whereas `2`
+represents a patient who relapsed at two years.
+
+```{r}
+y_surv = patients$surv
+y_surv_new = new_patients$surv
+head(y_surv)
+```
+
+### Predicting survival
+
+For survival outcomes, use `family = "cox"`, which fits a lasso Cox model
+(Solanes et al., 2022; Palau et al., 2022):
+
+```{r}
+set.seed(1)
+fit_fun = function (x_training, y_training) {
+  glmnet_fit(x_training, y_training, family = "cox")
+}
+predict_fun = function (m, x_test) {
+  predict(m, x_test)
+}
+res_surv = cv(x, y_surv, family = "cox", fit_fun, predict_fun, verbose = FALSE)
+res_surv
+```
+
+(If you see a warning about `cox.a0`, it only informs users of previous
+versions of the package that, for Cox models, `glmnet_fit` now adds an
+artificial intercept so that the risk scores of the different folds are on the
+same scale; you can ignore it.)
+
+For Cox models, `predict` does not return a probability but a **risk score**
+(the "linear predictor"): the higher, the sooner the patient is expected to
+relapse. `res_surv` shows:
+
+- `hr`: the hazard ratio associated with one unit of the risk score.
+- `hr.per.sd`: the hazard ratio associated with one standard deviation of the
+  risk score. Unlike `hr`, it does not depend on the scale of the risk score,
+  so it is the one to use to compare models. For instance, a value of 2 means
+  that the hazard of relapse doubles with each standard deviation of the risk
+  score.
+- The calibration slope (ideally 1).
+
+### Discrimination at different times
+
+We may also want to know how well the model discriminates the patients who
+relapse before a given time from those who do not. `surv2binary` converts the
+survival outcome into a binary outcome at each time:
+
+```{r}
+y_binary = surv2binary(y_surv)
+y_binary[[1]]$time
+head(y_binary[[1]]$status)
+```
+
+Then we can estimate the AUC at each time. Note that, at a given time, the
+status of the patients censored before that time is unknown (`NA`), so we
+must exclude them:
+
+```{r}
+for (i in 1:4) {
+  status = y_binary[[i]]$status
+  known = which(!is.na(status))
+  auc = simple.accuracy(status[known], res_surv$predictions$y.pred[known], "auc")
+  cat("Year", y_binary[[i]]$time, ": AUC =", round(auc$auc, 2),
+      "in", length(known), "patients\n")
+}
+```
+
+The AUC decreases with time because, in our data, the relapses after the first
+year are unrelated to the predictors (we know it because we simulated the data
+this way).
+
+
+## Part 3: Multisite data
+
+### The data
+
+In this part, we want to predict whether each patient will need surgery
+(`needs_surgery`: 1 = yes, 0 = no). Our 100 patients come from four hospitals,
+which have very different proportions of patients requiring surgery:
+
+```{r}
+site = patients$site
+table(site, patients$needs_surgery)
+```
+
+In addition, our patients have three laboratory measures (`L1`, `L2`, and
+`L3`). These measures are not related to the need of surgery, but each hospital's
+laboratory is calibrated slightly differently, so their values differ between
+hospitals:
+
+```{r}
+round(tapply(patients$L1, site, mean), 1)
+```
+
+### The effects of the site
+
+Let's see if the laboratory measures predict the need of surgery:
+
+```{r, warning = FALSE}
+x_lab = as.matrix(patients[, c("L1", "L2", "L3")])
+x_lab_new = as.matrix(new_patients[, c("L1", "L2", "L3")])
+y = patients$needs_surgery
+y_new = new_patients$needs_surgery
+
+set.seed(1)
+fit_fun = function (x_training, y_training, ...) {
+  glmnet_fit(x_training, y_training, family = "binomial")
+}
+predict_fun = function (m, x_test, ...) {
+  predict(m, x_test)
+}
+res_lab = cv(x_lab, y, family = "binomial", fit_fun, predict_fun, verbose = FALSE)
+res_lab
+```
+
+An AUC of `r round(simple.accuracy(y, res_lab$predictions$y.pred, "auc")$auc, 2)`!
+Did we discover a new biomarker? (We hid the warning about `type.measure`,
+which you can ignore as explained in the first tutorial.) Let's apply the model
+to the new patients, who come from a fifth hospital:
+
+```{r}
+m_lab = fit_fun(x_lab, y)
+y_new.pred = predict(m_lab, x_lab_new)
+simple.accuracy(y_new, y_new.pred, "auc")
+```
+
+The model does not work in the new hospital. What happened is that the model
+learned to recognize the **hospital** from the laboratory measures, and the
+hospitals differ in their proportion of patients requiring surgery. Thus, it
+predicted a high risk for the patients who seemed to come from the hospital
+with most surgeries, and a low risk for those who seemed to come from the hospital with
+fewest. This does not work in another hospital (Radua & Koutsouleris, 2024,
+rule 5).
+
+### Considering the site
+
+To detect this problem, give the sites to `cv` with the argument `site`:
+
+```{r}
+set.seed(1)
+res_lab = cv(x_lab, y, family = "binomial", fit_fun, predict_fun, site = site,
+             verbose = FALSE)
+res_lab
+```
+
+When you give the sites:
+
+- `cv` assigns the patients to the folds separately for each site, so that
+  all folds have patients from all sites.
+- `cv` gives the site of the training and test patients to `fit_fun` and
+  `predict_fun`, respectively. Our functions ignore them (this is why we
+  added `...` to their arguments), but you could use them, e.g., to remove
+  the differences between sites in the laboratory measures. Following Lesson
+  2, these differences must then be estimated using only the training
+  patients.
+- `res` estimates the accuracy with the function `multisite.accuracy` of the
+  package `multisite.accuracy`, which controls for the effects of the site
+  (Solanes et al., 2021). Here, the AUC drops to around 0.5 or lower, i.e., the
+  laboratory measures do not predict the need of surgery within each hospital.
+
+### Removing the differences between sites
+
+In multisite studies, it is also convenient to try to remove the differences
+between sites in the predictors, e.g., with the ComBat method of the package
+`combat.enigma` (Radua et al., 2020). Following Lesson 2, the differences
+between sites must be estimated in the training set (`combat_fit`) and then
+removed from both the training and the test sets (`combat_apply`). This is
+precisely what the sites given to `fit_fun` and `predict_fun` are for:
+
+```{r, eval = FALSE}
+library(combat.enigma)
+fit_fun = function (x_training, y_training, site_training) {
+  combat = combat_fit(x_training, site_training, verbose = FALSE)
+  x_training = combat_apply(combat, x_training, site_training, verbose = FALSE)$dat.combat
+  list(
+    combat = combat,
+    lasso = glmnet_fit(x_training, y_training, family = "binomial")
+  )
+}
+predict_fun = function (m, x_test, site_test) {
+  x_test = combat_apply(m$combat, x_test, site_test, verbose = FALSE)$dat.combat
+  predict(m$lasso, x_test)
+}
+res = cv(x_lab, y, family = "binomial", fit_fun, predict_fun, site = site,
+         verbose = FALSE)
+res
+```
+
+Fortunately, a benchmark study found that ComBat is enough to remove the
+effects of the site for lasso models, but not for other techniques such as
+random forests, support vector machines, or Gaussian processes (Solanes et al.,
+2023; see also the MAREoS benchmark at
+<https://www.imardgroup.com/mareos-benchmark/benchmark.html>). Note, however,
+that ComBat cannot be applied to patients from a site that was not in the
+training set unless we have some data from that site to estimate its
+differences.
+
+Of course, the best test of a model is to apply it to patients from other
+sites, as we did with the crystal ball.
+
+
+## Summary
+
+- Use `family = "gaussian"` for continuous outcomes, and `family = "cox"` for
+  survival outcomes.
+- When predicting change, compare your model with a baseline-only model with
+  `simple.accuracy.test`, to rule out that it only captures regression to the
+  mean (**Lesson 3**).
+- For Cox models, use the hazard ratio per standard deviation to compare
+  models, and `surv2binary` to estimate the AUC at different times.
+- In multisite data, give the sites to `cv`, so that the accuracy is estimated
+  controlling for the effects of the site, consider removing the differences
+  between sites within `fit_fun` (e.g., with ComBat), and validate your model
+  in other sites whenever possible.
+
+
+## References
+
+Palau, P., Solanes, A., Madre, M., Saez-Francas, N., Sarro, S., Moro, N.,
+Verdolini, N., Sanchez, M., Alonso-Lana, S., Amann, B.L., Romaguera, A.,
+Martin-Subero, M., Fortea, L., Fuentes-Claramonte, P., Garcia-Leon, M.A.,
+Munuera, J., Canales-Rodriguez, E.J., Fernandez-Corcuera, P., Brambilla,
+P., Vieta, E., Pomarol-Clotet, E., Radua, J. (2023) Improved estimation of the
+risk of manic relapse by combining clinical and brain scan data.
+*Spanish Journal of Psychiatry and Mental Health*, 16, 235--243, doi:
+[10.1016/j.rpsm.2023.01.001](https://doi.org/10.1016/j.rpsm.2023.01.001).
+
+Radua, J., Koutsouleris, N. (2024) Ten simple rules for using machine learning
+in mental health research. *Biological Psychiatry*, 96, 511–513, doi:
+[10.1016/j.biopsych.2023.11.012](https://doi.org/10.1016/j.biopsych.2023.11.012).
+
+Radua, J., Oliva, V., Vieta, E., De Prisco, M. (2026) Regression to the mean
+inflates accuracy in machine learning prediction of symptom change. *Nature
+Mental Health*, doi:
+[10.1038/s44220-026-00686-6](https://doi.org/10.1038/s44220-026-00686-6).
+
+Radua, J., Vieta, E., Shinohara, R., Kochunov, P., Quide, Y., Green, M.J., et
+al. (2020) Increased power by harmonizing structural MRI site differences with
+the ComBat batch adjustment method in ENIGMA. *NeuroImage*, 218, 116956, doi:
+[10.1016/j.neuroimage.2020.116956](https://doi.org/10.1016/j.neuroimage.2020.116956).
+
+Solanes, A., Gosling, C.J., Fortea, L., Ortuno, M., Lopez-Soley, E., Llufriu,
+S., et al. (2023) Removing the effects of the site in brain imaging
+machine-learning - Measurement and extendable benchmark. *NeuroImage*, 265,
+119800, doi:
+[10.1016/j.neuroimage.2022.119800](https://doi.org/10.1016/j.neuroimage.2022.119800).
+
+Solanes, A., Mezquida, G., Janssen, J., Amoretti, S., Lobo, A., Gonzalez-Pinto,
+A., Arango, C., Vieta, E., Castro-Fornieles, J., Berge, D., Albacete, A., Gine,
+E., Parellada, M., Bernardo, M.; PEPs group (collaborators); Pomarol-Clotet, E.,
+Radua, J. (2022) Combining MRI and clinical data to detect high relapse risk
+after the first episode of psychosis. *Schizophrenia*, 8, 100, doi:
+[10.1038/s41537-022-00309-w](https://doi.org/10.1038/s41537-022-00309-w).
+
+Solanes, A., Palau, P., Fortea, L., Salvador, R., Gonzalez-Navarro, L., Llach,
+C.D., Valenti, M., Vieta, E., Radua, J. (2021) Biased accuracy in multisite
+machine-learning studies due to incomplete removal of the effects of the site.
+*Psychiatry Research: Neuroimaging*, 314, 111313, doi:
+[10.1016/j.pscychresns.2021.111313](https://doi.org/10.1016/j.pscychresns.2021.111313).

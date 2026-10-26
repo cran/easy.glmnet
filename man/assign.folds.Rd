@@ -9,7 +9,7 @@
   \item{site}{vector or factor with the sites' names, or NULL for studies conducted in a single site.}
   \item{nfolds}{number of folds.}
 }
-\details{If \code{family} is \code{"binomial"}, the function randomly assigns the folds separately for the two outcomes. If \code{family} is \code{"gaussian"}, the function randomly assigns the folds separately for ranges of the outcome. If \code{family} is \code{"gaussian"}, the function randomly assigns the folds separately for ranges of time and censorship. If \code{site} is not null, the function randomly assigns the folds separately for each site.}
+\details{If \code{family} is \code{"binomial"}, the function randomly assigns the folds separately for the two outcomes. If \code{family} is \code{"gaussian"}, the function randomly assigns the folds separately for ranges of the outcome. If \code{family} is \code{"cox"}, the function randomly assigns the folds separately for ranges of time and censorship. If \code{site} is not null, the function randomly assigns the folds separately for each site.}
 \value{A numeric vector with the fold assigned to each observation}
 \references{
   Solanes, A., Mezquida, G., Janssen, J., Amoretti, S., Lobo, A., Gonzalez-Pinto, A., Arango, C., Vieta, E., Castro-Fornieles, J., Berge, D., Albacete, A., Gine, E., Parellada, M., Bernardo, M.; PEPs group (collaborators); Pomarol-Clotet, E., Radua, J. (2022)
@@ -18,7 +18,7 @@
 }
 \author{Joaquim Radua and Aleix Solanes}
 \seealso{
-  \code{\link{cv}} for conducting a cross-validation.
+  \code{\link{cv}} for conducting a cross-validation; \code{vignette("easy.glmnet")} for a tutorial on cross-validation; \code{vignette("other-outcomes-and-sites")} for a tutorial including multisite data.
 }
 \examples{
 # Create random y (numeric)

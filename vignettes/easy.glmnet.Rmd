@@ -1,0 +1,466 @@
+---
+title: "Get started: correct machine learning made easy"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{Get started: correct machine learning made easy}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+This tutorial shows you how to build a prediction model and, above all,
+how to find out **how well it will really work in new patients**. You do
+not need any previous knowledge of machine learning, and very little of
+R.
+
+This is the first of four tutorials:
+
+1.  **Get started** (this tutorial, about 30–40 minutes): building a
+    model and estimating its accuracy correctly.
+2.  [Evaluating and interpreting your model](evaluating-and-interpreting.html)
+    (about 20–30 minutes): discrimination, calibration, relevant variables,
+    and predicting new patients.
+3.  [Missing data](missing-data.html) (about 20–30 minutes): multiple
+    imputation.
+4.  [Continuous and survival outcomes, regression to the mean, and multisite data](other-outcomes-and-sites.html)
+    (about 30–40 minutes).
+
+We recommend following all of them in order, but feel free to go directly
+to the one you need.
+
+In this tutorial, you will learn to:
+
+1.  Fit a prediction model with `glmnet_fit` and apply it with
+    `glmnet_predict` (or just `predict`).
+2.  Understand why evaluating a model with the same patients used to
+    build it gives results that are too good to be true.
+3.  Estimate the accuracy of a model correctly with `cv`
+    (cross-validation).
+4.  Include categorical variables with `data.frame2glmnet.matrix`.
+
+All the code runs in a few seconds, so we encourage you to run it
+yourself as you read.
+
+
+## New to R?
+
+If you have used R before, you can skip this section.
+
+**Installing.** Install R from <https://cran.r-project.org> and, if you
+want a friendlier interface, RStudio from <https://posit.co>. Then
+install this package by typing the following in the R console (you only
+need to do this once):
+
+```{r, eval = FALSE}
+install.packages("easy.glmnet")
+```
+
+Every time you open R, load the package with:
+
+```{r}
+library(easy.glmnet)
+```
+
+**Objects.** R stores values in objects with `=` (you may also see `<-`,
+which does the same). Typing the name of an object shows its value:
+
+```{r}
+a = 5
+a * 2
+```
+
+**Vectors** are lists of values, created with `c()`:
+
+```{r}
+ages = c(34, 51, 28)
+mean(ages)
+```
+
+**Data frames** are tables, where each row is an observation (e.g., a
+patient) and each column is a variable. You can get a column with `$`,
+and select rows and columns with `[rows, columns]`:
+
+```{r}
+df = data.frame(age = c(34, 51, 28), sex = c("F", "M", "F"))
+df$age
+df[1:2, ]       # rows 1 and 2, all columns
+df[, "sex"]     # all rows, column "sex"
+```
+
+**Functions** take some inputs (arguments) and return an output. You can
+write your own with `function`. The last line is what the function
+returns:
+
+```{r}
+add_ten = function (x) {
+  x + 10
+}
+add_ten(5)
+```
+
+This is important because, as you will see, to cross-validate a model
+you will write two small functions.
+
+Finally, to get help about any function, type `?` followed by its name,
+e.g., `?mean` or `?glmnet_fit`.
+
+
+## The data
+
+The package includes two simulated datasets:
+
+-   `patients`: 100 patients who were followed to see whether they
+    relapsed. For each patient, we have 40 numeric variables (`X1` to
+    `X40`), 3 categorical variables (`C1` to `C3`), and whether they
+    relapsed (`relapse`: 1 = yes, 0 = no).
+-   `new_patients`: 900 other patients from the same population.
+
+```{r}
+dim(patients)                 # number of rows (patients) and columns
+patients[1:5, c(1:3, 41:47)]  # first 5 patients, some of the columns
+table(patients$relapse)       # how many relapsed
+```
+
+Our goal is to use the data of the 100 patients to build a model that
+predicts relapse in future patients (`new_patients`), and to know how accurate these
+predictions will be.
+
+In a real study, you would not have `new_patients`: future patients have
+not arrived yet! Here we have them because the data are simulated, and
+we will use them as a "crystal ball" to check which methods tell us the
+truth about the accuracy of our models.
+
+
+## Step 1: A first prediction model
+
+### Preparing the data
+
+Most prediction functions need the predictors as a numeric **matrix** (a
+table with only numbers) and the outcome as a **vector** (a single row or column of elements). Let's start
+with the 40 numeric variables:
+
+```{r}
+x = as.matrix(patients[, 1:40])  # columns X1, X2, ..., X40
+y = patients$relapse
+x_new = as.matrix(new_patients[, 1:40])
+y_new = new_patients$relapse
+```
+
+Some steps of this tutorial involve randomness. To obtain exactly the
+same results as shown here, we fix the "seed" of the random number
+generator:
+
+```{r}
+set.seed(1)
+```
+
+### A standard logistic regression
+
+Many researchers would start with a standard logistic regression
+including all the variables:
+
+```{r}
+m_glm = glm(y ~ ., data = data.frame(x), family = "binomial")
+```
+
+R warns us that the fitted probabilities are 0 or 1. Keep this in mind,
+it is a first sign of trouble. Let's see how well the model predicts
+relapse in our patients. The function `predict` returns, for each
+patient, the probability of relapse, and `round` converts it into a
+prediction: 1 (relapse) if the probability is higher than 0.5, or 0 (no
+relapse) otherwise:
+
+```{r}
+y.pred = round(predict(m_glm, type = "response"))
+simple.accuracy(y, y.pred, "bac")
+```
+
+`simple.accuracy` compares the actual outcomes (`y`) with the
+predictions (`y.pred`). Here, it returns three numbers, each with the lower
+(.lwr) and upper (.upr) limits of its 95% confidence interval:
+
+-   `se` (sensitivity): the proportion of patients who relapsed that the
+    model correctly predicted would relapse. 1 (i.e., 100%) means that
+    the model correctly predicted all the patients who relapsed.
+-   `sp` (specificity): the proportion of patients who did not relapse
+    that the model correctly predicted would not relapse. 1 (i.e., 100%)
+    means that the model correctly predicted all the patients who did
+    not relapse.
+-   `bac` (balanced accuracy): the mean of the two.
+
+A perfect model! Too good to be true? Let's use our crystal ball and
+apply the model to the new patients:
+
+```{r}
+y_new.pred = round(predict(m_glm, data.frame(x_new), type = "response"))
+simple.accuracy(y_new, y_new.pred, "bac")
+```
+
+In new patients, the balanced accuracy drops quite a bit. What happened?
+
+The model has **memorized** the 100 patients instead of learning general
+rules. With 40 variables and only 100 patients, the model can adjust to
+the random particularities of most or all patients, which will not be
+repeated in new patients. This is called **overfitting**. It is like a
+student who memorizes the answers of a mock exam: they get a perfect
+score in that exam, but not in the real one.
+
+### A lasso model
+
+A lasso model is a type of regression designed to reduce overfitting: it
+makes the coefficients smaller ("shrinks" them) and can remove the
+variables that do not seem useful. `glmnet_fit` fits a lasso model in
+one line  (Solanes et al., 2022):
+
+```{r}
+m_lasso = glmnet_fit(x, y, family = "binomial")
+```
+
+(If you see a warning about `type.measure`, it only informs users of
+previous versions of the package that a default setting has changed; you
+can ignore it.)
+
+To apply it to some patients, use `glmnet_predict` (or just `predict`), which
+returns the probabilities of relapse:
+
+```{r}
+y.pred = round(predict(m_lasso, x))
+simple.accuracy(y, y.pred, "bac")
+```
+
+Again, in the same patients used to build the model, the balanced
+accuracy is very high . Let's look at the new patients:
+
+```{r}
+y_new.pred = round(predict(m_lasso, x_new))
+simple.accuracy(y_new, y_new.pred, "bac")
+```
+
+The lasso model may work some better than the standard logistic regression in
+new patients, but its accuracy is still much lower than it seemed. Thus,
+whatever the method (Radua & Koutsouleris, 2024):
+
+> **Lesson 1: Never evaluate a model with the same patients that you
+> used to build it.**
+
+But in a real study, we have no crystal ball. How can we know the
+accuracy of a model in new patients if we only have the patients used to
+build it? The answer is cross-validation.
+
+
+## Step 2: Cross-validation
+
+### The idea
+
+Cross-validation splits the patients into several groups called
+**folds** (usually 10). Then, for each fold:
+
+1.  It builds a model using the patients of all the other folds (the
+    **training** set).
+2.  It applies this model to the patients of this fold (the **test**
+    set).
+
+```         
+         Fold 1   Fold 2   Fold 3   ...   Fold 10
+Round 1:  test    train    train    ...    train
+Round 2:  train   test     train    ...    train
+Round 3:  train   train    test     ...    train
+...
+Round 10: train   train    train    ...    test
+```
+
+At the end, each patient has a prediction from a model that never saw
+them, just like a new patient. Comparing these predictions with the
+actual outcomes tells us how well the model works in "new" patients.
+
+### Doing it with `cv`
+
+The function `cv` does all the work (dividing the patients into folds,
+building the models, applying them, and collecting the predictions), but
+it needs you to tell it two things, as two small functions:
+
+-   `fit_fun`: how to build a model from the training set. It receives
+    the predictors and outcomes of the training set and must return the
+    model.
+-   `predict_fun`: how to apply a model to the test set. It receives the
+    model and the predictors of the test set and must return the
+    predictions.
+
+```{r}
+fit_fun = function (x_training, y_training) {
+  glmnet_fit(x_training, y_training, family = "binomial")
+}
+predict_fun = function (m, x_test) {
+  round(predict(m, x_test))
+}
+```
+
+Note that these functions do exactly what we did before with `glmnet_fit` and
+`glmnet_predict` (or just `predict`), but with the training and test sets
+of each fold. Now we can run the cross-validation:
+
+```{r}
+res = cv(x, y, family = "binomial", fit_fun, predict_fun, verbose = FALSE)
+```
+
+`res$predictions` contains, for each patient, the fold, the actual
+outcome and the prediction:
+
+```{r}
+head(res$predictions)
+```
+
+Let's see the accuracy (we just have to print the `cv` object):
+
+```{r}
+res
+```
+
+The cross-validation estimates a balanced accuracy very close to the one that
+the lasso model actually achieved in the new patients. Unlike the evaluation
+with the same patients, the cross-validation tells the truth, even without a
+crystal ball.
+
+### A note on randomness
+
+`cv` assigns the patients to the folds randomly (though ensuring that
+each fold has a similar proportion of patients who relapsed). With
+another seed, the folds would be different, and the estimate would
+change a bit, especially in small samples like this one. This is why we
+used `set.seed`: to make the results reproducible.
+
+
+## Step 3: Data leakage
+
+### Cross-validation can also be optimistic if used wrongly
+
+Imagine that, before the cross-validation, we select the variables with
+the lasso model that we fitted in Step 1 with all the patients (`m_lasso`; recall that the lasso sets some
+coefficients exactly to zero, so it uses only some of the variables), and then
+we cross-validate a model that uses only these variables. It seems
+reasonable: we only keep the variables that seem useful. Let's try:
+
+```{r}
+selected = names(m_lasso$beta)  # variables selected by the lasso of Step 1
+res = cv(x[, selected], y, family = "binomial", fit_fun, predict_fun, verbose = FALSE)
+res
+```
+
+The cross-validation estimates a higher balanced accuracy than in step 2! But
+let's use our crystal ball: we build the model with these variables and all the
+patients, and apply it to the new patients:
+
+```{r}
+m_leak = glmnet_fit(x[, selected], y, family = "binomial")
+y_new.pred = round(predict(m_leak, x_new[, selected]))
+simple.accuracy(y_new, c(y_new.pred), "bac")
+```
+
+Quite less. The cross-validation was too optimistic. Why? Because the
+variables were selected using all the patients, including those that
+later played the role of test set! In other words, the selection "saw"
+the test set, so these patients were no longer like new patients. This
+is called **data leakage**: information from the test set leaks into the
+models.
+
+### The solution
+
+There is a simple solution (Radua & Koutsouleris, 2024):
+
+> **Lesson 2: Every step that learns something from the data is part of
+> the model. Thus, it must be inside `fit_fun`, and must use only the
+> training set.**
+
+
+## Step 4: Categorical variables
+
+So far, we have only used the numeric variables. But our patients also
+have three categorical variables (`C1`, `C2`, and `C3`), with values
+`A`, `B`, or `C`. `glmnet_fit` needs a numeric matrix, so we must first
+convert each categorical variable into several numeric variables (called
+"dummy" variables), one for each value. `data.frame2glmnet.matrix` does
+it for you:
+
+```{r}
+df = patients[, 1:43] # all predictors
+df2mat = data.frame2glmnet.matrix_fit(df)
+x_all = data.frame2glmnet.matrix(df2mat, df)
+x_all[1:5, 41:49]
+```
+
+For example, `C1:A` is 1 if the patient has `C1 = A`, and 0 otherwise.
+
+Note that there are two functions. `data.frame2glmnet.matrix_fit`
+**learns** how to convert the data (which variables are categorical,
+which values they can take, etc.), and `data.frame2glmnet.matrix`
+**applies** this conversion to some data. Following Lesson 2, the
+conversion must be learned inside `fit_fun`, using only the training
+set. Converting the data learns much less than selecting variables, but
+it is a good habit, and other steps learn a lot (e.g., imputing missing
+values, as you will see in a subsequent tutorial).
+
+So, the model now has two parts: the conversion and the lasso. `fit_fun`
+can return both in a `list`, and `predict_fun` can then use both:
+
+```{r}
+fit_fun = function (df_training, y_training) {
+  df2mat = data.frame2glmnet.matrix_fit(df_training)
+  x_training = data.frame2glmnet.matrix(df2mat, df_training)
+  list(
+    df2mat = df2mat,
+    lasso = glmnet_fit(x_training, y_training, family = "binomial")
+  )
+}
+predict_fun = function (m, df_test) {
+  x_test = data.frame2glmnet.matrix(m$df2mat, df_test)
+  round(predict(m$lasso, x_test))
+}
+df = patients[, 1:43] # all predictors
+res = cv(df, y, family = "binomial", fit_fun, predict_fun, verbose = FALSE)
+res
+```
+
+The results are the same as without the categorical variables because, in these data, they are unrelated to relapse, so the lasso does not select them.
+
+
+## Summary
+
+-   A model evaluated with the same patients used to build it looks much
+    better than it is (**Lesson 1**).
+-   Cross-validation (`cv`) estimates how well the model will work in
+    new patients. You only need to write `fit_fun` (how to build the
+    model) and `predict_fun` (how to apply it).
+-   Categorical variables can be converted into numeric variables using
+    `data.frame2glmnet.matrix`.
+-   Every step that learns from the data, such as selecting variables or
+    even converting categorical variables, is part of the model and goes
+    inside `fit_fun`. Otherwise, the cross-validation will be too
+    optimistic (**Lesson 2**).
+
+Both lessons are part of rule 4 of the ten simple rules for using
+machine learning in mental health research (Radua & Koutsouleris, 2024),
+which apply to other fields too. We recommend reading them all.
+
+In the next tutorial, [Evaluating and interpreting your model](evaluating-and-interpreting.html)
+(`vignette("evaluating-and-interpreting")`), you will learn other ways to measure
+accuracy and how to interpret your models.
+
+
+## References
+
+Radua, J., Koutsouleris, N. (2024) Ten simple rules for using machine learning
+in mental health research. *Biological Psychiatry*, 96, 511–513, doi:
+[10.1016/j.biopsych.2023.11.012](https://doi.org/10.1016/j.biopsych.2023.11.012).
+
+Solanes, A., Mezquida, G., Janssen, J., Amoretti, S., Lobo, A., Gonzalez-Pinto,
+A., Arango, C., Vieta, E., Castro-Fornieles, J., Berge, D., Albacete, A., Gine,
+E., Parellada, M., Bernardo, M.; PEPs group (collaborators); Pomarol-Clotet, E.,
+Radua, J. (2022) Combining MRI and clinical data to detect high relapse risk
+after the first episode of psychosis. *Schizophrenia*, 8, 100, doi:
+[10.1038/s41537-022-00309-w](https://doi.org/10.1038/s41537-022-00309-w).

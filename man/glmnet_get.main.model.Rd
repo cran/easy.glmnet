@@ -8,7 +8,7 @@ glmnet_get.main.model(x, childname = NULL, verbose = TRUE)
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{x}{a list of objects of class \code{"glmnet_fit"} or a list of objects that have a child of class \code{"glmnet_fit"}.}
-  \item{childname}{name of the child of class \code{"glmnet_fit"} (if \code{x}) is a list of objects that have a child of class \code{"glmnet_fit"}).}
+  \item{childname}{name of the child of class \code{"glmnet_fit"} (if \code{x} is a list of objects that have a child of class \code{"glmnet_fit"}).}
   \item{verbose}{(optional) logical, whether to print some messages during execution.}
 }
 \details{If there are several instances of the most similar model, it averages them.}
@@ -21,7 +21,7 @@ glmnet_get.main.model(x, childname = NULL, verbose = TRUE)
 \author{Joaquim Radua}
 \seealso{
   \code{\link{glmnet_predict}} for obtaining predictions.
-  \code{\link{cv}} for conducting a cross-validation.
+  \code{\link{cv}} for conducting a cross-validation; \code{vignette("evaluating-and-interpreting")} for a tutorial; \code{vignette("missing-data")} for a tutorial with several models per fold.
 }
 \examples{
 # Create random x (predictors) and y (binary)
@@ -42,9 +42,5 @@ res = cv(x, y, family = "binomial", fit_fun = fit_fun, predict_fun = predict_fun
 
 # Show the main model
 lasso = glmnet_get.main.model(res$models, "lasso")
-cat(
-  "Model: ~plogis(", round(lasso$a0, 2), "+",
-  paste0(round(lasso$beta, 2), "*", names(lasso$beta), collapse = " + "),
-  ")\n"
-)
+lasso
 }
